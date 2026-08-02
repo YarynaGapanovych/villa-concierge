@@ -1,12 +1,11 @@
 import type { ReactNode } from "react";
 
 import {
-  formatItemDateTime,
   formatPriceDetailed,
   formatStayDates,
 } from "@/lib/format-dates";
+import { MemberProposalItinerary } from "@/components/member-proposal-itinerary";
 import {
-  groupItemsByCategory,
   memberFirstName,
   type ProposalItemData,
 } from "@/lib/proposal-utils";
@@ -43,49 +42,6 @@ function ConciergeNote({ note }: { note: string }) {
   );
 }
 
-function CategorySection({
-  category,
-  items,
-}: {
-  category: string;
-  items: ProposalItemData[];
-}) {
-  return (
-    <section className="overflow-hidden rounded-2xl border border-stone-200/80 bg-white/80 shadow-sm shadow-stone-200/50 backdrop-blur-sm">
-      <header className="border-b border-stone-100 px-6 py-4">
-        <h2 className="font-[family-name:var(--font-proposal-display)] text-2xl font-medium tracking-wide text-stone-800">
-          {category}
-        </h2>
-      </header>
-      <ul className="divide-y divide-stone-100">
-        {items.map((item) => (
-          <li
-            key={item.id}
-            className="flex flex-col gap-3 px-6 py-5 sm:flex-row sm:items-start sm:justify-between"
-          >
-            <div className="min-w-0 space-y-1.5">
-              <p className="font-[family-name:var(--font-proposal-display)] text-xl font-medium text-stone-900">
-                {item.title}
-              </p>
-              {item.description && (
-                <p className="max-w-prose text-sm leading-relaxed text-stone-600">
-                  {item.description}
-                </p>
-              )}
-              <p className="text-xs tracking-wide text-stone-500 uppercase">
-                {formatItemDateTime(item.scheduledAt)}
-              </p>
-            </div>
-            <p className="shrink-0 font-[family-name:var(--font-proposal-display)] text-lg font-medium text-stone-800 tabular-nums">
-              {formatPriceDetailed(item.price)}
-            </p>
-          </li>
-        ))}
-      </ul>
-    </section>
-  );
-}
-
 export function MemberProposalPreparing({ memberName }: { memberName: string }) {
   return (
     <main className="flex min-h-full flex-col items-center justify-center px-6 py-24 text-center">
@@ -114,10 +70,7 @@ export function MemberProposalView({
 }) {
   const { reservation, items, notes } = proposal;
   const memberName = memberFirstName(reservation.member.name);
-  const groupedItems = groupItemsByCategory(items);
   const total = items.reduce((sum, item) => sum + item.price, 0);
-  const arrivalDate = reservation.arrivalDate;
-  const departureDate = reservation.departureDate;
 
   return (
     <main className="min-h-full bg-stone-50">
@@ -134,7 +87,7 @@ export function MemberProposalView({
             {reservation.destination}
           </p>
           <p className="text-sm tracking-wide text-stone-600">
-            {formatStayDates(arrivalDate, departureDate)}
+            {formatStayDates(reservation.arrivalDate, reservation.departureDate)}
           </p>
         </div>
       </header>
@@ -151,25 +104,11 @@ export function MemberProposalView({
 
         {notes?.trim() && <ConciergeNote note={notes.trim()} />}
 
-        <div className="space-y-8">
-          {items.length === 0 ? (
-            <p className="rounded-2xl border border-dashed border-stone-200 bg-white/60 px-6 py-12 text-center text-stone-600">
-              Your concierge is still adding experiences to this itinerary.
-            </p>
-          ) : (
-            [...groupedItems.entries()].map(([category, categoryItems]) => (
-              <CategorySection
-                key={category}
-                category={category}
-                items={[...categoryItems].sort(
-                  (a, b) =>
-                    new Date(a.scheduledAt).getTime() -
-                    new Date(b.scheduledAt).getTime(),
-                )}
-              />
-            ))
-          )}
-        </div>
+        <MemberProposalItinerary
+          items={items}
+          arrivalDate={reservation.arrivalDate}
+          departureDate={reservation.departureDate}
+        />
 
         {items.length > 0 && (
           <footer className="mt-16 border-t border-stone-200 pt-10 text-center">

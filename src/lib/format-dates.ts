@@ -41,3 +41,19 @@ export function formatShortDate(value: string) {
     year: "numeric",
   });
 }
+
+export function formatTimelineDayLabel(dayNumber: number, date: Date) {
+  const formatted = date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+  });
+
+  return `Day ${dayNumber} — ${formatted}`;
+}
+
+export function formatItemTime(value: string) {
+  return new Date(value).toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
