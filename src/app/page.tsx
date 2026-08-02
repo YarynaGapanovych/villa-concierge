@@ -1,9 +1,42 @@
-export default function Home() {
+import { ConciergeDashboard } from "@/components/concierge-dashboard";
+import { prisma } from "@/lib/prisma";
+
+export const dynamic = "force-dynamic";
+
+export default async function Home() {
+  const reservation = await prisma.reservation.findFirst({
+    include: {
+      member: {
+        select: {
+          name: true,
+          email: true,
+        },
+      },
+    },
+  });
+
+  if (!reservation) {
+    return (
+      <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col justify-center p-4">
+        <p className="text-sm text-muted-foreground">
+          No reservation found. Run{" "}
+          <code className="rounded bg-muted px-1 py-0.5">pnpm exec prisma db seed</code>{" "}
+          to load sample data.
+        </p>
+      </main>
+    );
+  }
+
   return (
-    <main className="flex flex-1 items-center justify-center">
-      <h1 className="text-4xl font-bold tracking-tight text-primary">
-        Villa Concierge — styling works
-      </h1>
-    </main>
+    <ConciergeDashboard
+      reservation={{
+        id: reservation.id,
+        destination: reservation.destination,
+        villa: reservation.villa,
+        arrivalDate: reservation.arrivalDate.toISOString(),
+        departureDate: reservation.departureDate.toISOString(),
+        member: reservation.member,
+      }}
+    />
   );
 }
