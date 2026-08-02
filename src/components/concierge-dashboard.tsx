@@ -1,15 +1,14 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { MapPinIcon, XIcon } from "lucide-react";
+import { MapPinIcon, PlusIcon } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 
-import { Badge } from "@/components/ui/badge";
+import { ItineraryItemRow } from "@/components/itinerary-item-row";
 import { Button } from "@/components/ui/button";
 import {
   Card,
-  CardContent,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -197,6 +196,7 @@ export function ConciergeDashboard({
   const [notes, setNotes] = useState("");
   const [items, setItems] = useState<ProposalItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [creatingProposal, setCreatingProposal] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -231,6 +231,17 @@ export function ConciergeDashboard({
   useEffect(() => {
     proposalStatusRef.current = proposalStatus;
   }, [proposalStatus]);
+
+  function applyProposal(proposal: ProposalDetails, id: string, status: string) {
+    setProposalId(id);
+    setProposalStatus(status);
+    setItems(proposal.items);
+    setNotes(proposal.notes ?? "");
+    lastSavedNotes.current = proposal.notes ?? "";
+    setSuccessMessage(
+      status !== "draft" ? `Proposal sent to ${reservation.member.email}` : null,
+    );
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -276,13 +287,6 @@ export function ConciergeDashboard({
           return;
         }
 
-        setProposalId(current.id);
-        setProposalStatus(current.status);
-
-        if (current.status !== "draft") {
-          setSuccessMessage(`Proposal sent to ${reservation.member.email}`);
-        }
-
         const proposalRes = await fetch(`/api/proposals/${current.id}`);
         if (!proposalRes.ok) {
           throw new Error("Failed to load proposal");
@@ -291,9 +295,7 @@ export function ConciergeDashboard({
         const proposal = (await proposalRes.json()) as ProposalDetails;
 
         if (!cancelled) {
-          setItems(proposal.items);
-          setNotes(proposal.notes ?? "");
-          lastSavedNotes.current = proposal.notes ?? "";
+          applyProposal(proposal, current.id, current.status);
         }
       } catch (loadError) {
         if (!cancelled) {
@@ -419,6 +421,53 @@ export function ConciergeDashboard({
     }
   }
 
+  async function handleNewProposal() {
+    setCreatingProposal(true);
+    setError(null);
+
+    try {
+      const response = await fetch("/api/proposals", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reservationId: reservation.id }),
+      });
+
+      if (!response.ok) {
+        const body = (await response.json()) as { error?: string };
+        throw new Error(body.error ?? "Failed to create proposal");
+      }
+
+      const created = (await response.json()) as ProposalDetails & {
+        id: string;
+        status: string;
+      };
+
+      applyProposal(created, created.id, created.status);
+      reset(defaultItemFormValues);
+    } catch (createError) {
+      setError(
+        createError instanceof Error
+          ? createError.message
+          : "Failed to create proposal",
+      );
+    } finally {
+      setCreatingProposal(false);
+    }
+  }
+
+  function handleItemUpdated(updatedItem: ProposalItem) {
+    setItems((current) =>
+      [...current.filter((item) => item.id !== updatedItem.id), updatedItem].sort(
+        (a, b) =>
+          new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime(),
+      ),
+    );
+  }
+
+  function handleItemRemoved(itemId: string) {
+    setItems((current) => current.filter((item) => item.id !== itemId));
+  }
+
   const onAddItem = handleSubmit(async (data) => {
     if (!proposalId || !isDraft) {
       return;
@@ -462,34 +511,6 @@ export function ConciergeDashboard({
     }
   });
 
-  async function handleRemove(itemId: string) {
-    if (!proposalId || !isDraft) {
-      return;
-    }
-
-    setError(null);
-
-    try {
-      const response = await fetch(
-        `/api/proposals/${proposalId}/items/${itemId}`,
-        { method: "DELETE" },
-      );
-
-      if (!response.ok) {
-        const body = (await response.json()) as { error?: string };
-        throw new Error(body.error ?? "Failed to remove item");
-      }
-
-      setItems((current) => current.filter((item) => item.id !== itemId));
-    } catch (removeError) {
-      setError(
-        removeError instanceof Error
-          ? removeError.message
-          : "Failed to remove item",
-      );
-    }
-  }
-
   const total = items.reduce((sum, item) => sum + item.price, 0);
 
   return (
@@ -505,13 +526,33 @@ export function ConciergeDashboard({
 
       <Card className="[--card-spacing:--spacing(5)]">
         <CardHeader className="gap-4 pb-1">
-          <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-            <CardTitle className="font-heading text-2xl font-semibold tracking-tight">
-              {reservation.member.name}
-            </CardTitle>
-            <span className="text-sm text-muted-foreground">
-              {reservation.member.email}
-            </span>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+              <CardTitle className="font-heading text-2xl font-semibold tracking-tight">
+                {reservation.member.name}
+              </CardTitle>
+              <span className="text-sm text-muted-foreground">
+                {reservation.member.email}
+              </span>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
+              {proposalId && (
+                <span className="inline-flex items-center rounded-full border border-border bg-muted/60 px-3 py-1 text-xs font-medium tracking-wide uppercase">
+                  {proposalStatus}
+                </span>
+              )}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={loading || creatingProposal}
+                onClick={() => void handleNewProposal()}
+              >
+                <PlusIcon className="size-4" aria-hidden="true" />
+                {creatingProposal ? "Creating…" : "New Proposal"}
+              </Button>
+            </div>
           </div>
 
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -549,7 +590,14 @@ export function ConciergeDashboard({
 
         {!isDraft && (
           <p className="text-sm text-muted-foreground">
-            This proposal has been sent and can no longer be edited.
+            This proposal has been sent and can no longer be edited. Start a new
+            proposal to build another itinerary option.
+          </p>
+        )}
+
+        {isDraft && items.length > 0 && (
+          <p className="text-sm text-muted-foreground">
+            Click an item to edit title, description, schedule, or price.
           </p>
         )}
 
@@ -692,40 +740,17 @@ export function ConciergeDashboard({
         ) : (
           <ul className="space-y-1.5">
             {items.map((item) => (
-              <li key={item.id}>
-                <Card size="sm" className="py-2">
-                  <CardContent className="flex items-center gap-2 px-3 py-0">
-                    <Badge variant="secondary" className="shrink-0">
-                      {item.category}
-                    </Badge>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate font-medium">{item.title}</p>
-                      {item.description && (
-                        <p className="truncate text-sm text-muted-foreground">
-                          {item.description}
-                        </p>
-                      )}
-                    </div>
-                    <span className="shrink-0 text-sm text-muted-foreground tabular-nums">
-                      {formatItemDateTime(item.scheduledAt)}
-                    </span>
-                    <span className="shrink-0 text-base font-medium tabular-nums">
-                      {formatPrice(item.price)}
-                    </span>
-                    {isDraft && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon-xs"
-                        aria-label={`Remove ${item.title}`}
-                        onClick={() => handleRemove(item.id)}
-                      >
-                        <XIcon />
-                      </Button>
-                    )}
-                  </CardContent>
-                </Card>
-              </li>
+              <ItineraryItemRow
+                key={item.id}
+                item={item}
+                proposalId={proposalId!}
+                arrivalDate={reservation.arrivalDate}
+                departureDate={reservation.departureDate}
+                editable={isDraft}
+                onUpdated={handleItemUpdated}
+                onRemoved={handleItemRemoved}
+                onError={setError}
+              />
             ))}
           </ul>
         )}

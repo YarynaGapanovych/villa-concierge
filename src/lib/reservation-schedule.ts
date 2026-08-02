@@ -39,6 +39,13 @@ export function toDatetimeLocalBound(isoDate: string, bound: "min" | "max") {
   return bound === "min" ? `${datePart}T00:00` : `${datePart}T23:59`;
 }
 
+export function toDatetimeLocalValue(isoDate: string) {
+  const date = new Date(isoDate);
+  const pad = (value: number) => String(value).padStart(2, "0");
+
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
 export function formatReservationScheduleRange(
   arrivalDate: string,
   departureDate: string,

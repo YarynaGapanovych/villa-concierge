@@ -55,3 +55,20 @@ export type ItineraryItemFormInput = z.input<
 export type ItineraryItemFormOutput = z.output<
   ReturnType<typeof createItineraryItemSchema>
 >;
+
+export function createItineraryItemUpdateSchema(
+  arrivalDate: string,
+  departureDate: string,
+) {
+  return createItineraryItemSchema(arrivalDate, departureDate).omit({
+    category: true,
+  });
+}
+
+export type ItineraryItemUpdateInput = z.input<
+  ReturnType<typeof createItineraryItemUpdateSchema>
+>;
+
+export type ItineraryItemUpdateOutput = z.output<
+  ReturnType<typeof createItineraryItemUpdateSchema>
+>;
