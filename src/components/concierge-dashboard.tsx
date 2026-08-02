@@ -3,16 +3,8 @@
 import { MapPinIcon, PlusIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 
-import {
-  ProposalCard,
-  type ProposalDetails,
-} from "@/components/proposal-card";
+import { ProposalCard, type ProposalDetails } from "@/components/proposal-card";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { formatStayDates } from "@/lib/format-dates";
 
 type ReservationData = {
@@ -29,7 +21,6 @@ type ReservationData = {
 
 type ProposalListItem = ProposalDetails & {
   reservationId: string;
-  createdAt: string;
 };
 
 function toProposalDetails(proposal: ProposalListItem): ProposalDetails {
@@ -38,6 +29,8 @@ function toProposalDetails(proposal: ProposalListItem): ProposalDetails {
     status: proposal.status,
     notes: proposal.notes,
     items: proposal.items,
+    createdAt: proposal.createdAt,
+    sentAt: proposal.sentAt,
   };
 }
 
@@ -60,20 +53,20 @@ export function ConciergeDashboard({
       setError(null);
 
       try {
-        const proposalsRes = await fetch("/api/proposals");
+        const proposalsRes = await fetch(
+          `/api/proposals?reservationId=${encodeURIComponent(reservation.id)}`,
+        );
         if (!proposalsRes.ok) {
           throw new Error("Failed to load proposals");
         }
 
-        const allProposals = (await proposalsRes.json()) as ProposalListItem[];
-        let forReservation = allProposals
-          .filter((proposal) => proposal.reservationId === reservation.id)
-          .sort(
-            (a, b) =>
-              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-          );
+        let allProposals = (await proposalsRes.json()) as ProposalListItem[];
+        allProposals = allProposals.sort(
+          (a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+        );
 
-        if (forReservation.length === 0) {
+        if (allProposals.length === 0) {
           const createRes = await fetch("/api/proposals", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -86,11 +79,11 @@ export function ConciergeDashboard({
           }
 
           const created = (await createRes.json()) as ProposalListItem;
-          forReservation = [created];
+          allProposals = [created];
         }
 
         if (!cancelled) {
-          setProposals(forReservation.map(toProposalDetails));
+          setProposals(allProposals.map(toProposalDetails));
         }
       } catch (loadError) {
         if (!cancelled) {
@@ -116,9 +109,7 @@ export function ConciergeDashboard({
 
   function updateProposal(next: ProposalDetails) {
     setProposals((current) =>
-      current.map((proposal) =>
-        proposal.id === next.id ? next : proposal,
-      ),
+      current.map((proposal) => (proposal.id === next.id ? next : proposal)),
     );
   }
 
@@ -155,8 +146,10 @@ export function ConciergeDashboard({
     }
   }
 
-  function handleSendSuccess(next: ProposalDetails) {
-    updateProposal(next);
+  function handleSendSuccess(sent: ProposalDetails) {
+    setProposals((current) =>
+      current.map((proposal) => (proposal.id === sent.id ? sent : proposal)),
+    );
     setSuccessMessage(`Proposal sent to ${reservation.member.email}`);
   }
 
@@ -171,37 +164,35 @@ export function ConciergeDashboard({
         </div>
       )}
 
-      <Card className="[--card-spacing:--spacing(5)]">
-        <CardHeader className="gap-4 pb-1">
-          <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-            <CardTitle className="font-heading text-3xl font-semibold tracking-tight">
-              {reservation.member.name}
-            </CardTitle>
-            <span className="text-base text-muted-foreground">
-              {reservation.member.email}
+      <header className="space-y-4">
+        <div className="space-y-1">
+          <h1 className="font-heading text-3xl font-semibold tracking-tight">
+            {reservation.member.name}
+          </h1>
+          <p className="text-base text-muted-foreground">
+            {reservation.member.email}
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-2 text-lg font-semibold">
+            <MapPinIcon
+              className="size-4 shrink-0 text-muted-foreground"
+              aria-hidden="true"
+            />
+            <span>
+              {reservation.destination} · {reservation.villa}
             </span>
           </div>
 
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-2 text-lg font-semibold">
-              <MapPinIcon
-                className="size-4 shrink-0 text-muted-foreground"
-                aria-hidden="true"
-              />
-              <span>
-                {reservation.destination} · {reservation.villa}
-              </span>
-            </div>
-
-            <span className="inline-flex w-fit items-center rounded-full border border-border bg-muted/60 px-3 py-1.5 text-lg font-semibold tabular-nums">
-              {formatStayDates(
-                reservation.arrivalDate,
-                reservation.departureDate,
-              )}
-            </span>
-          </div>
-        </CardHeader>
-      </Card>
+          <span className="inline-flex w-fit items-center rounded-full border border-border bg-muted/60 px-3 py-1.5 text-lg font-semibold tabular-nums">
+            {formatStayDates(
+              reservation.arrivalDate,
+              reservation.departureDate,
+            )}
+          </span>
+        </div>
+      </header>
 
       <div>
         <Button

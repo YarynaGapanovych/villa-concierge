@@ -2,9 +2,12 @@ import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const reservationId = new URL(request.url).searchParams.get("reservationId");
+
     const proposals = await prisma.proposal.findMany({
+      where: reservationId ? { reservationId } : undefined,
       orderBy: { createdAt: "desc" },
       include: {
         reservation: {

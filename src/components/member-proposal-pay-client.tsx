@@ -88,7 +88,7 @@ export function MemberProposalPayClient({
         </div>
       </header>
 
-      <div className="mx-auto max-w-3xl px-6 pb-24">
+      <div className="relative z-10 mx-auto max-w-3xl px-6 pb-24">
         <section className="-mt-10 mb-12 text-center">
           <p className="font-[family-name:var(--font-proposal-display)] text-4xl text-stone-800 md:text-5xl">
             Almost there, {memberName}

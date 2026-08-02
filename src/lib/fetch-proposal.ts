@@ -1,10 +1,10 @@
 import { headers } from "next/headers";
 
-import type { MemberProposalData } from "@/components/member-proposal-view";
+import type { ProposalViewData } from "@/components/proposal-view";
 
 export async function fetchProposal(
   id: string,
-): Promise<MemberProposalData | null> {
+): Promise<ProposalViewData | null> {
   const headersList = await headers();
   const host = headersList.get("host") ?? "localhost:3000";
   const protocol = process.env.NODE_ENV === "production" ? "https" : "http";
@@ -21,5 +21,5 @@ export async function fetchProposal(
     throw new Error("Failed to fetch proposal");
   }
 
-  return (await response.json()) as MemberProposalData;
+  return (await response.json()) as ProposalViewData;
 }

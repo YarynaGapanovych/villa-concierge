@@ -1,19 +1,15 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 
 import { ItineraryItemRow } from "@/components/itinerary-item-row";
+import { ProposalPreviewDialog } from "@/components/proposal-preview-dialog";
+import { ProposalStatusBadge } from "@/components/proposal-status-badge";
+import { type ProposalViewData } from "@/components/proposal-view";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -23,11 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  formatItemDateTime,
-  formatPrice,
-  formatStayDates,
-} from "@/lib/format-dates";
+import { formatPrice, formatShortDate } from "@/lib/format-dates";
 import { toDatetimeLocalBound } from "@/lib/reservation-schedule";
 import {
   createItineraryItemSchema,
@@ -35,6 +27,9 @@ import {
   type ItineraryItemFormInput,
   type ItineraryItemFormOutput,
 } from "@/lib/schemas/itinerary-item";
+
+const emptyProposalSendMessage =
+  "Add at least one itinerary item before sending this proposal.";
 
 const defaultItemFormValues: ItineraryItemFormInput = {
   category: "",
@@ -70,105 +65,31 @@ export type ProposalDetails = {
   status: string;
   notes: string | null;
   items: ProposalItem[];
+  createdAt: string;
+  sentAt: string | null;
 };
 
 function memberFirstName(fullName: string) {
   return fullName.split(" ")[0] ?? fullName;
 }
 
-function groupItemsByCategory(items: ProposalItem[]) {
-  const groups = new Map<string, ProposalItem[]>();
-
-  for (const item of items) {
-    const group = groups.get(item.category) ?? [];
-    group.push(item);
-    groups.set(item.category, group);
-  }
-
-  return groups;
-}
-
-function ProposalMemberPreview({
-  reservation,
-  items,
-  notes,
-}: {
-  reservation: ReservationData;
-  items: ProposalItem[];
-  notes: string;
-}) {
-  const total = items.reduce((sum, item) => sum + item.price, 0);
-  const groupedItems = groupItemsByCategory(items);
-
-  return (
-    <div className="space-y-4">
-      <div className="space-y-1 border-b pb-3">
-        <p className="font-medium">{reservation.member.name}</p>
-        <p className="text-lg text-muted-foreground">
-          {reservation.destination} · {reservation.villa}
-        </p>
-        <p className="text-lg">
-          {formatStayDates(reservation.arrivalDate, reservation.departureDate)}
-        </p>
-      </div>
-
-      {notes.trim() && (
-        <blockquote className="rounded-lg border-l-2 border-primary/40 bg-muted/40 px-3 py-2 text-lg italic">
-          {notes.trim()}
-        </blockquote>
-      )}
-
-      {items.length === 0 ? (
-        <p className="text-lg text-muted-foreground">
-          No itinerary items yet.
-        </p>
-      ) : (
-        <div className="space-y-4">
-          {[...groupedItems.entries()].map(([category, categoryItems]) => (
-            <div key={category} className="space-y-2">
-              <h3 className="text-base font-semibold tracking-wide uppercase text-muted-foreground">
-                {category}
-              </h3>
-              <ul className="space-y-2">
-                {[...categoryItems]
-                  .sort(
-                    (a, b) =>
-                      new Date(a.scheduledAt).getTime() -
-                      new Date(b.scheduledAt).getTime(),
-                  )
-                  .map((item) => (
-                    <li
-                      key={item.id}
-                      className="flex items-start justify-between gap-3 text-lg"
-                    >
-                      <div className="min-w-0">
-                        <p className="font-medium">{item.title}</p>
-                        {item.description && (
-                          <p className="text-base text-muted-foreground">
-                            {item.description}
-                          </p>
-                        )}
-                        <p className="text-base text-muted-foreground tabular-nums">
-                          {formatItemDateTime(item.scheduledAt)}
-                        </p>
-                      </div>
-                      <span className="shrink-0 font-medium tabular-nums">
-                        {formatPrice(item.price)}
-                      </span>
-                    </li>
-                  ))}
-              </ul>
-            </div>
-          ))}
-        </div>
-      )}
-
-      <div className="flex items-center justify-between border-t pt-3 text-lg font-semibold">
-        <span>Total</span>
-        <span className="tabular-nums">{formatPrice(total)}</span>
-      </div>
-    </div>
-  );
+function toProposalViewData(
+  data: ProposalViewData,
+  reservation: ReservationData,
+  notesOverride?: string | null,
+): ProposalViewData {
+  return {
+    ...data,
+    notes:
+      notesOverride !== undefined ? notesOverride?.trim() || null : data.notes,
+    reservation: {
+      destination: reservation.destination,
+      villa: reservation.villa,
+      arrivalDate: reservation.arrivalDate,
+      departureDate: reservation.departureDate,
+      member: { name: reservation.member.name },
+    },
+  };
 }
 
 export function ProposalCard({
@@ -205,7 +126,10 @@ export function ProposalCard({
     [proposal.items],
   );
 
-  const total = sortedItems.reduce((sum, item) => sum + item.price, 0);
+  const totalPrice = useMemo(
+    () => sortedItems.reduce((sum, item) => sum + item.price, 0),
+    [sortedItems],
+  );
 
   const itineraryItemSchema = useMemo(
     () =>
@@ -303,7 +227,7 @@ export function ProposalCard({
     }
 
     if (sortedItems.length === 0) {
-      onError("Add at least one itinerary item before sending.");
+      onError(emptyProposalSendMessage);
       return;
     }
 
@@ -324,13 +248,23 @@ export function ProposalCard({
       }
 
       const result = (await response.json()) as {
-        proposal: ProposalDetails;
+        proposal: ProposalDetails & {
+          createdAt: string;
+          sentAt: string | null;
+        };
       };
 
       const next = result.proposal;
       setNotes(next.notes ?? "");
       lastSavedNotes.current = next.notes ?? "";
-      onSendSuccess(next);
+      onSendSuccess({
+        id: next.id,
+        status: next.status,
+        notes: next.notes,
+        items: next.items,
+        createdAt: next.createdAt,
+        sentAt: next.sentAt,
+      });
     } catch (sendError) {
       onError(
         sendError instanceof Error
@@ -401,16 +335,25 @@ export function ProposalCard({
     }
   });
 
+  const isEmptyDraft = isDraft && sortedItems.length === 0;
+  const sendDisabled =
+    sending || disabled || !isDraft || sortedItems.length === 0;
+
   return (
     <section className="space-y-6 rounded-xl border border-border bg-card p-5">
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-        <span className="inline-flex items-center rounded-full border border-border bg-muted/60 px-3 py-1 text-sm font-medium tracking-wide uppercase">
-          {proposal.status}
-        </span>
-        <span className="text-base text-muted-foreground">
-          {sortedItems.length} {sortedItems.length === 1 ? "item" : "items"}
-          {sortedItems.length > 0 && <> · {formatPrice(total)}</>}
-        </span>
+      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border pb-4">
+        <ProposalStatusBadge status={proposal.status} />
+        <div className="text-right text-base text-muted-foreground">
+          <span className="tabular-nums">
+            {sortedItems.length} {sortedItems.length === 1 ? "item" : "items"} ·{" "}
+            {formatPrice(totalPrice)}
+            {" · "}
+            Created {formatShortDate(proposal.createdAt)}
+            {proposal.sentAt
+              ? ` · Sent ${formatShortDate(proposal.sentAt)}`
+              : ""}
+          </span>
+        </div>
       </div>
 
       {isDraft ? (
@@ -429,116 +372,143 @@ export function ProposalCard({
 
           <form
             onSubmit={onAddItem}
-            className="flex flex-col gap-4 rounded-xl border border-border bg-background/50 p-5"
+            className="flex flex-col gap-2 rounded-xl border border-border bg-background/50 p-5"
           >
-            <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1fr_1.5fr_minmax(220px,1.5fr)_0.8fr] lg:items-end">
-              <label className="flex min-w-0 flex-col gap-1.5">
-                <span className="text-sm leading-relaxed text-muted-foreground">
-                  Category
-                </span>
-                <Controller
-                  name="category"
-                  control={control}
-                  render={({ field }) => (
-                    <Select
-                      value={field.value || null}
-                      onValueChange={(value) => field.onChange(value ?? "")}
-                      disabled={disabled}
-                    >
-                      <SelectTrigger
-                        className="h-9 w-full"
-                        aria-invalid={errors.category ? true : undefined}
+            <div className="flex flex-col gap-1">
+              <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1fr_1.5fr_minmax(220px,1.5fr)_0.8fr] lg:items-start">
+                <label className="flex min-w-0 flex-col gap-1.5">
+                  <span className="text-sm leading-relaxed text-muted-foreground">
+                    Category
+                  </span>
+                  <Controller
+                    name="category"
+                    control={control}
+                    render={({ field }) => (
+                      <Select
+                        value={field.value || null}
+                        onValueChange={(value) => field.onChange(value ?? "")}
+                        disabled={disabled}
                       >
-                        <SelectValue placeholder="Select" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {ITINERARY_CATEGORIES.map((category) => (
-                          <SelectItem key={category} value={category}>
-                            {category}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
-                {errors.category && (
-                  <p className="text-sm text-destructive" role="alert">
-                    {errors.category.message}
-                  </p>
-                )}
-              </label>
+                        <SelectTrigger
+                          className="h-9 w-full"
+                          aria-invalid={errors.category ? true : undefined}
+                        >
+                          <SelectValue placeholder="Select" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {ITINERARY_CATEGORIES.map((category) => (
+                            <SelectItem key={category} value={category}>
+                              {category}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                </label>
 
-              <label className="flex min-w-0 flex-col gap-1.5">
-                <span className="text-sm leading-relaxed text-muted-foreground">
-                  Title
-                </span>
-                <Input
-                  {...register("title")}
-                  placeholder="Sunset dinner"
-                  disabled={disabled}
-                  aria-invalid={errors.title ? true : undefined}
-                />
-                {errors.title && (
-                  <p className="text-sm text-destructive" role="alert">
-                    {errors.title.message}
-                  </p>
-                )}
-              </label>
-
-              <label className="flex min-w-0 flex-col gap-1.5 lg:min-w-[220px]">
-                <span className="text-sm leading-relaxed text-muted-foreground">
-                  Scheduled
-                </span>
-                <Input
-                  type="datetime-local"
-                  min={scheduledMin}
-                  max={scheduledMax}
-                  disabled={disabled}
-                  aria-invalid={errors.scheduledAt ? true : undefined}
-                  className="min-w-[220px]"
-                  {...register("scheduledAt")}
-                />
-                {errors.scheduledAt && (
-                  <p className="text-sm text-destructive" role="alert">
-                    {errors.scheduledAt.message}
-                  </p>
-                )}
-              </label>
-
-              <label className="flex min-w-0 flex-col gap-1.5">
-                <span className="text-sm leading-relaxed text-muted-foreground">
-                  Price
-                </span>
-                <div className="relative w-full">
-                  <span
-                    aria-hidden
-                    className="pointer-events-none absolute inset-y-0 left-2.5 flex items-center text-muted-foreground"
-                  >
-                    $
+                <label className="flex min-w-0 flex-col gap-1.5">
+                  <span className="text-sm leading-relaxed text-muted-foreground">
+                    Title
                   </span>
                   <Input
-                    type="number"
-                    min="0"
-                    step="1"
-                    placeholder="0"
-                    className="pl-6"
+                    {...register("title")}
+                    placeholder="Sunset dinner"
                     disabled={disabled}
-                    aria-invalid={errors.price ? true : undefined}
-                    {...register("price")}
+                    aria-invalid={errors.title ? true : undefined}
                   />
+                </label>
+
+                <label className="flex min-w-0 flex-col gap-1.5 lg:min-w-[220px]">
+                  <span className="text-sm leading-relaxed text-muted-foreground">
+                    Scheduled
+                  </span>
+                  <Input
+                    type="datetime-local"
+                    min={scheduledMin}
+                    max={scheduledMax}
+                    disabled={disabled}
+                    aria-invalid={errors.scheduledAt ? true : undefined}
+                    className="min-w-[220px]"
+                    {...register("scheduledAt")}
+                  />
+                </label>
+
+                <label className="flex min-w-0 flex-col gap-1.5">
+                  <span className="text-sm leading-relaxed text-muted-foreground">
+                    Price
+                  </span>
+                  <div className="relative w-full">
+                    <span
+                      aria-hidden
+                      className="pointer-events-none absolute inset-y-0 left-2.5 flex items-center text-muted-foreground"
+                    >
+                      $
+                    </span>
+                    <Input
+                      type="number"
+                      min="0"
+                      step="1"
+                      placeholder="0"
+                      className="pl-6"
+                      disabled={disabled}
+                      aria-invalid={errors.price ? true : undefined}
+                      {...register("price")}
+                    />
+                  </div>
+                </label>
+              </div>
+
+              {(errors.category ||
+                errors.title ||
+                errors.scheduledAt ||
+                errors.price) && (
+                <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1fr_1.5fr_minmax(220px,1.5fr)_0.8fr]">
+                  <div>
+                    {errors.category?.message && (
+                      <p
+                        className="text-sm leading-5 text-destructive"
+                        role="alert"
+                      >
+                        {errors.category.message}
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    {errors.title?.message && (
+                      <p
+                        className="text-sm leading-5 text-destructive"
+                        role="alert"
+                      >
+                        {errors.title.message}
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    {errors.scheduledAt?.message && (
+                      <p
+                        className="text-sm leading-5 text-destructive"
+                        role="alert"
+                      >
+                        {errors.scheduledAt.message}
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    {errors.price?.message && (
+                      <p
+                        className="text-sm leading-5 text-destructive"
+                        role="alert"
+                      >
+                        {errors.price.message}
+                      </p>
+                    )}
+                  </div>
                 </div>
-                {errors.price && (
-                  <p className="text-sm text-destructive" role="alert">
-                    {errors.price.message}
-                  </p>
-                )}
-              </label>
+              )}
             </div>
 
             <label className="flex flex-col gap-1.5">
-              <span className="text-sm leading-relaxed text-muted-foreground">
-                Description
-              </span>
               <Textarea
                 {...register("description")}
                 placeholder="Optional notes for the member"
@@ -595,46 +565,9 @@ export function ProposalCard({
       </div>
 
       <div className="space-y-4 border-t border-border pt-6">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="font-heading text-lg font-semibold tracking-[0.14em] uppercase leading-relaxed">
-            Preview & Send
-          </h2>
-          <div className="flex items-center gap-2">
-            <Dialog>
-              <DialogTrigger render={<Button variant="outline" size="sm" />}>
-                Preview
-              </DialogTrigger>
-              <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
-                <DialogHeader>
-                  <DialogTitle>Member preview</DialogTitle>
-                  <DialogDescription>
-                    This is what {reservation.member.name} will receive.
-                  </DialogDescription>
-                </DialogHeader>
-                <ProposalMemberPreview
-                  reservation={reservation}
-                  items={sortedItems}
-                  notes={notes}
-                />
-              </DialogContent>
-            </Dialog>
-            <Button
-              size="sm"
-              onClick={() => void handleSend()}
-              disabled={
-                sending || disabled || !isDraft || sortedItems.length === 0
-              }
-            >
-              {sending ? "Sending…" : "Send Proposal"}
-            </Button>
-          </div>
-        </div>
-
-        {isDraft && sortedItems.length === 0 && (
-          <p className="text-base text-muted-foreground">
-            Add at least one itinerary item before sending this proposal.
-          </p>
-        )}
+        <h2 className="font-heading text-lg font-semibold tracking-[0.14em] uppercase leading-relaxed">
+          Preview & Send
+        </h2>
 
         <label className="block space-y-1.5">
           <span className="text-sm leading-relaxed text-muted-foreground">
@@ -650,6 +583,50 @@ export function ProposalCard({
             readOnly={!isDraft}
           />
         </label>
+
+        <div className="flex flex-col items-end gap-2">
+          <div className="flex flex-wrap justify-end gap-2">
+            <ProposalPreviewDialog
+              proposalId={proposal.id}
+              memberFirstName={memberName}
+              disabled={disabled}
+              buildPreviewData={(data) =>
+                toProposalViewData(
+                  data,
+                  reservation,
+                  isDraft ? notes : undefined,
+                )
+              }
+            />
+            <Button
+              variant="outline"
+              size="sm"
+              render={
+                <Link
+                  href={`/proposal/${proposal.id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                />
+              }
+            >
+              Member page
+            </Button>
+            {isDraft && (
+              <Button
+                size="sm"
+                onClick={() => void handleSend()}
+                disabled={sendDisabled}
+              >
+                {sending ? "Sending…" : "Send Proposal"}
+              </Button>
+            )}
+          </div>
+          {isEmptyDraft && (
+            <p className="max-w-sm text-right text-sm text-muted-foreground">
+              {emptyProposalSendMessage}
+            </p>
+          )}
+        </div>
       </div>
     </section>
   );
