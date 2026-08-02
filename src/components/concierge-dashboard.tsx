@@ -1,14 +1,15 @@
 "use client";
 
-import { XIcon } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { MapPinIcon, XIcon } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Controller, useForm } from "react-hook-form";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -34,15 +35,23 @@ import {
   formatPrice,
   formatStayDates,
 } from "@/lib/format-dates";
+import {
+  toDatetimeLocalBound,
+} from "@/lib/reservation-schedule";
+import {
+  createItineraryItemSchema,
+  ITINERARY_CATEGORIES,
+  type ItineraryItemFormInput,
+  type ItineraryItemFormOutput,
+} from "@/lib/schemas/itinerary-item";
 
-const CATEGORIES = [
-  "Dining",
-  "Activities",
-  "Wellness",
-  "Excursions",
-  "Transport",
-  "Experiences",
-] as const;
+const defaultItemFormValues: ItineraryItemFormInput = {
+  category: "",
+  title: "",
+  description: "",
+  scheduledAt: "",
+  price: "",
+};
 
 type ReservationData = {
   id: string;
@@ -77,14 +86,6 @@ type ProposalDetails = {
   status: string;
   notes: string | null;
   items: ProposalItem[];
-};
-
-const emptyForm = {
-  category: "",
-  title: "",
-  description: "",
-  scheduledAt: "",
-  price: "",
 };
 
 function memberFirstName(fullName: string) {
@@ -195,9 +196,7 @@ export function ConciergeDashboard({
   const [proposalStatus, setProposalStatus] = useState<string>("draft");
   const [notes, setNotes] = useState("");
   const [items, setItems] = useState<ProposalItem[]>([]);
-  const [form, setForm] = useState(emptyForm);
   const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -207,6 +206,27 @@ export function ConciergeDashboard({
 
   const isDraft = proposalStatus === "draft";
   const memberName = memberFirstName(reservation.member.name);
+  const scheduledMin = toDatetimeLocalBound(reservation.arrivalDate, "min");
+  const scheduledMax = toDatetimeLocalBound(reservation.departureDate, "max");
+  const itineraryItemSchema = useMemo(
+    () =>
+      createItineraryItemSchema(
+        reservation.arrivalDate,
+        reservation.departureDate,
+      ),
+    [reservation.arrivalDate, reservation.departureDate],
+  );
+
+  const {
+    register,
+    control,
+    handleSubmit,
+    reset,
+    formState: { errors, isSubmitting },
+  } = useForm<ItineraryItemFormInput, unknown, ItineraryItemFormOutput>({
+    resolver: zodResolver(itineraryItemSchema),
+    defaultValues: defaultItemFormValues,
+  });
 
   useEffect(() => {
     proposalStatusRef.current = proposalStatus;
@@ -399,25 +419,11 @@ export function ConciergeDashboard({
     }
   }
 
-  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
+  const onAddItem = handleSubmit(async (data) => {
     if (!proposalId || !isDraft) {
       return;
     }
 
-    const price = Number(form.price);
-    if (
-      !form.category ||
-      !form.title ||
-      !form.scheduledAt ||
-      Number.isNaN(price)
-    ) {
-      setError("Category, title, scheduled time, and price are required");
-      return;
-    }
-
-    setSubmitting(true);
     setError(null);
 
     try {
@@ -425,11 +431,11 @@ export function ConciergeDashboard({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          category: form.category,
-          title: form.title,
-          description: form.description.trim() ? form.description : null,
-          scheduledAt: new Date(form.scheduledAt).toISOString(),
-          price,
+          category: data.category,
+          title: data.title,
+          description: data.description.trim() ? data.description : null,
+          scheduledAt: new Date(data.scheduledAt).toISOString(),
+          price: data.price,
         }),
       });
 
@@ -446,17 +452,15 @@ export function ConciergeDashboard({
             new Date(b.scheduledAt).getTime(),
         ),
       );
-      setForm(emptyForm);
+      reset(defaultItemFormValues);
     } catch (submitError) {
       setError(
         submitError instanceof Error
           ? submitError.message
           : "Failed to add item",
       );
-    } finally {
-      setSubmitting(false);
     }
-  }
+  });
 
   async function handleRemove(itemId: string) {
     if (!proposalId || !isDraft) {
@@ -500,25 +504,35 @@ export function ConciergeDashboard({
       )}
 
       <Card className="[--card-spacing:--spacing(5)]">
-        <CardHeader className="gap-1 pb-2">
-          <CardTitle className="font-heading text-2xl font-semibold tracking-tight">
-            {reservation.member.name}
-          </CardTitle>
-          <CardDescription className="text-base">
-            {reservation.destination} · {reservation.villa}
-          </CardDescription>
+        <CardHeader className="gap-4 pb-1">
+          <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+            <CardTitle className="font-heading text-2xl font-semibold tracking-tight">
+              {reservation.member.name}
+            </CardTitle>
+            <span className="text-sm text-muted-foreground">
+              {reservation.member.email}
+            </span>
+          </div>
+
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-2 text-base font-semibold">
+              <MapPinIcon
+                className="size-4 shrink-0 text-muted-foreground"
+                aria-hidden="true"
+              />
+              <span>
+                {reservation.destination} · {reservation.villa}
+              </span>
+            </div>
+
+            <span className="inline-flex w-fit items-center rounded-full border border-border bg-muted/60 px-3 py-1.5 text-base font-semibold tabular-nums">
+              {formatStayDates(
+                reservation.arrivalDate,
+                reservation.departureDate,
+              )}
+            </span>
+          </div>
         </CardHeader>
-        <CardContent className="flex flex-wrap items-center gap-x-4 gap-y-1 text-base leading-relaxed">
-          <span className="font-medium">
-            {formatStayDates(
-              reservation.arrivalDate,
-              reservation.departureDate,
-            )}
-          </span>
-          <span className="text-sm text-muted-foreground">
-            {reservation.member.email}
-          </span>
-        </CardContent>
       </Card>
 
       <section className="space-y-4">
@@ -540,108 +554,121 @@ export function ConciergeDashboard({
         )}
 
         <form
-          onSubmit={handleSubmit}
+          onSubmit={onAddItem}
           className="grid gap-3 rounded-xl border border-border bg-card p-5 sm:grid-cols-2 lg:grid-cols-6"
         >
           <label className="space-y-1.5 lg:col-span-1">
             <span className="text-xs leading-relaxed text-muted-foreground">Category</span>
-            <Select
-              value={form.category || null}
-              onValueChange={(value) =>
-                setForm((current) => ({ ...current, category: value ?? "" }))
-              }
-              disabled={!isDraft || loading}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select" />
-              </SelectTrigger>
-              <SelectContent>
-                {CATEGORIES.map((category) => (
-                  <SelectItem key={category} value={category}>
-                    {category}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Controller
+              name="category"
+              control={control}
+              render={({ field }) => (
+                <Select
+                  value={field.value || null}
+                  onValueChange={(value) => field.onChange(value ?? "")}
+                  disabled={!isDraft || loading}
+                >
+                  <SelectTrigger
+                    className="w-full"
+                    aria-invalid={errors.category ? true : undefined}
+                  >
+                    <SelectValue placeholder="Select" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ITINERARY_CATEGORIES.map((category) => (
+                      <SelectItem key={category} value={category}>
+                        {category}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            />
+            {errors.category && (
+              <p className="text-xs text-destructive" role="alert">
+                {errors.category.message}
+              </p>
+            )}
           </label>
 
           <label className="space-y-1.5 lg:col-span-1">
             <span className="text-xs leading-relaxed text-muted-foreground">Title</span>
             <Input
-              value={form.title}
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  title: event.target.value,
-                }))
-              }
+              {...register("title")}
               placeholder="Sunset dinner"
-              required
               disabled={!isDraft || loading}
+              aria-invalid={errors.title ? true : undefined}
             />
-          </label>
-
-          <label className="space-y-1.5 sm:col-span-2 lg:col-span-1">
-            <span className="text-xs leading-relaxed text-muted-foreground">Description</span>
-            <Textarea
-              value={form.description}
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  description: event.target.value,
-                }))
-              }
-              placeholder="Optional notes"
-              rows={1}
-              className="min-h-8 field-sizing-fixed resize-none py-1.5"
-              disabled={!isDraft || loading}
-            />
+            {errors.title && (
+              <p className="text-xs text-destructive" role="alert">
+                {errors.title.message}
+              </p>
+            )}
           </label>
 
           <label className="space-y-1.5 lg:col-span-1">
             <span className="text-xs leading-relaxed text-muted-foreground">Scheduled</span>
             <Input
               type="datetime-local"
-              value={form.scheduledAt}
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  scheduledAt: event.target.value,
-                }))
-              }
-              required
+              min={scheduledMin}
+              max={scheduledMax}
               disabled={!isDraft || loading}
+              aria-invalid={errors.scheduledAt ? true : undefined}
+              {...register("scheduledAt")}
             />
+            {errors.scheduledAt && (
+              <p className="text-xs text-destructive" role="alert">
+                {errors.scheduledAt.message}
+              </p>
+            )}
           </label>
 
           <label className="space-y-1.5 lg:col-span-1">
             <span className="text-xs leading-relaxed text-muted-foreground">Price</span>
-            <Input
-              type="number"
-              min="0"
-              step="1"
-              value={form.price}
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  price: event.target.value,
-                }))
-              }
-              placeholder="0"
-              required
-              disabled={!isDraft || loading}
-            />
+            <div className="relative">
+              <span
+                aria-hidden
+                className="pointer-events-none absolute inset-y-0 left-2.5 flex items-center text-muted-foreground"
+              >
+                $
+              </span>
+              <Input
+                type="number"
+                min="0"
+                step="1"
+                placeholder="0"
+                className="pl-6"
+                disabled={!isDraft || loading}
+                aria-invalid={errors.price ? true : undefined}
+                {...register("price")}
+              />
+            </div>
+            {errors.price && (
+              <p className="text-xs text-destructive" role="alert">
+                {errors.price.message}
+              </p>
+            )}
           </label>
 
           <div className="flex items-end lg:col-span-1">
             <Button
               type="submit"
               className="w-full"
-              disabled={submitting || loading || !proposalId || !isDraft}
+              disabled={isSubmitting || loading || !proposalId || !isDraft}
             >
-              {submitting ? "Adding…" : "Add item"}
+              {isSubmitting ? "Adding…" : "Add item"}
             </Button>
           </div>
+
+          <label className="space-y-1.5 sm:col-span-2 lg:col-span-6">
+            <span className="text-xs leading-relaxed text-muted-foreground">Description</span>
+            <Textarea
+              {...register("description")}
+              placeholder="Optional notes for the member"
+              rows={2}
+              disabled={!isDraft || loading}
+            />
+          </label>
         </form>
 
         {error && (

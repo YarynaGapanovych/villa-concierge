@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/prisma";
+import {
+  isWithinReservationSchedule,
+  reservationScheduleErrorMessage,
+} from "@/lib/reservation-schedule";
 
 export async function POST(
   request: Request,
@@ -11,6 +15,14 @@ export async function POST(
 
     const proposal = await prisma.proposal.findUnique({
       where: { id },
+      include: {
+        reservation: {
+          select: {
+            arrivalDate: true,
+            departureDate: true,
+          },
+        },
+      },
     });
 
     if (!proposal) {
@@ -97,6 +109,24 @@ export async function POST(
 
     if (price === undefined) {
       return NextResponse.json({ error: "price is required" }, { status: 400 });
+    }
+
+    if (
+      !isWithinReservationSchedule(
+        scheduledAt,
+        proposal.reservation.arrivalDate.toISOString(),
+        proposal.reservation.departureDate.toISOString(),
+      )
+    ) {
+      return NextResponse.json(
+        {
+          error: reservationScheduleErrorMessage(
+            proposal.reservation.arrivalDate.toISOString(),
+            proposal.reservation.departureDate.toISOString(),
+          ),
+        },
+        { status: 400 },
+      );
     }
 
     const item = await prisma.proposalItem.create({
