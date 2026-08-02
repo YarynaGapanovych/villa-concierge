@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { XIcon } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
@@ -12,6 +12,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -21,7 +29,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { formatItemDateTime, formatPrice, formatStayDates } from "@/lib/format-dates";
+import {
+  formatItemDateTime,
+  formatPrice,
+  formatStayDates,
+} from "@/lib/format-dates";
 
 const CATEGORIES = [
   "Dining",
@@ -57,6 +69,14 @@ type ProposalSummary = {
   id: string;
   reservationId: string;
   status: string;
+  createdAt: string;
+};
+
+type ProposalDetails = {
+  id: string;
+  status: string;
+  notes: string | null;
+  items: ProposalItem[];
 };
 
 const emptyForm = {
@@ -67,22 +87,133 @@ const emptyForm = {
   price: "",
 };
 
+function memberFirstName(fullName: string) {
+  return fullName.split(" ")[0] ?? fullName;
+}
+
+function groupItemsByCategory(items: ProposalItem[]) {
+  const groups = new Map<string, ProposalItem[]>();
+
+  for (const item of items) {
+    const group = groups.get(item.category) ?? [];
+    group.push(item);
+    groups.set(item.category, group);
+  }
+
+  return groups;
+}
+
+function ProposalMemberPreview({
+  reservation,
+  items,
+  notes,
+}: {
+  reservation: ReservationData;
+  items: ProposalItem[];
+  notes: string;
+}) {
+  const total = items.reduce((sum, item) => sum + item.price, 0);
+  const groupedItems = groupItemsByCategory(items);
+
+  return (
+    <div className="space-y-4">
+      <div className="space-y-1 border-b pb-3">
+        <p className="font-medium">{reservation.member.name}</p>
+        <p className="text-sm text-muted-foreground">
+          {reservation.destination} · {reservation.villa}
+        </p>
+        <p className="text-sm">
+          {formatStayDates(reservation.arrivalDate, reservation.departureDate)}
+        </p>
+      </div>
+
+      {notes.trim() && (
+        <blockquote className="rounded-lg border-l-2 border-primary/40 bg-muted/40 px-3 py-2 text-sm italic">
+          {notes.trim()}
+        </blockquote>
+      )}
+
+      {items.length === 0 ? (
+        <p className="text-sm text-muted-foreground">No itinerary items yet.</p>
+      ) : (
+        <div className="space-y-4">
+          {[...groupedItems.entries()].map(([category, categoryItems]) => (
+            <div key={category} className="space-y-2">
+              <h3 className="text-xs font-semibold tracking-wide uppercase text-muted-foreground">
+                {category}
+              </h3>
+              <ul className="space-y-2">
+                {[...categoryItems]
+                  .sort(
+                    (a, b) =>
+                      new Date(a.scheduledAt).getTime() -
+                      new Date(b.scheduledAt).getTime(),
+                  )
+                  .map((item) => (
+                  <li
+                    key={item.id}
+                    className="flex items-start justify-between gap-3 text-sm"
+                  >
+                    <div className="min-w-0">
+                      <p className="font-medium">{item.title}</p>
+                      {item.description && (
+                        <p className="text-xs text-muted-foreground">
+                          {item.description}
+                        </p>
+                      )}
+                      <p className="text-xs text-muted-foreground tabular-nums">
+                        {formatItemDateTime(item.scheduledAt)}
+                      </p>
+                    </div>
+                    <span className="shrink-0 font-medium tabular-nums">
+                      {formatPrice(item.price)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="flex items-center justify-between border-t pt-3 text-sm font-semibold">
+        <span>Total</span>
+        <span className="tabular-nums">{formatPrice(total)}</span>
+      </div>
+    </div>
+  );
+}
+
 export function ConciergeDashboard({
   reservation,
 }: {
   reservation: ReservationData;
 }) {
-  const [draftProposalId, setDraftProposalId] = useState<string | null>(null);
+  const [proposalId, setProposalId] = useState<string | null>(null);
+  const [proposalStatus, setProposalStatus] = useState<string>("draft");
+  const [notes, setNotes] = useState("");
   const [items, setItems] = useState<ProposalItem[]>([]);
   const [form, setForm] = useState(emptyForm);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const notesSaveTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastSavedNotes = useRef("");
+  const proposalStatusRef = useRef(proposalStatus);
+
+  const isDraft = proposalStatus === "draft";
+  const memberName = memberFirstName(reservation.member.name);
+
+  useEffect(() => {
+    proposalStatusRef.current = proposalStatus;
+  }, [proposalStatus]);
 
   useEffect(() => {
     let cancelled = false;
 
-    async function loadDraftProposal() {
+    async function loadProposal() {
       setLoading(true);
       setError(null);
 
@@ -93,13 +224,18 @@ export function ConciergeDashboard({
         }
 
         const proposals = (await proposalsRes.json()) as ProposalSummary[];
-        let draft = proposals.find(
-          (proposal) =>
-            proposal.reservationId === reservation.id &&
-            proposal.status === "draft",
-        );
+        const forReservation = proposals
+          .filter((proposal) => proposal.reservationId === reservation.id)
+          .sort(
+            (a, b) =>
+              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+          );
 
-        if (!draft) {
+        let current =
+          forReservation.find((proposal) => proposal.status === "draft") ??
+          forReservation[0];
+
+        if (!current) {
           const createRes = await fetch("/api/proposals", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -111,24 +247,33 @@ export function ConciergeDashboard({
             throw new Error(body.error ?? "Failed to create draft proposal");
           }
 
-          draft = (await createRes.json()) as ProposalSummary;
+          current = (await createRes.json()) as ProposalSummary;
         }
 
         if (cancelled) {
           return;
         }
 
-        setDraftProposalId(draft.id);
+        setProposalId(current.id);
+        setProposalStatus(current.status);
 
-        const proposalRes = await fetch(`/api/proposals/${draft.id}`);
-        if (!proposalRes.ok) {
-          throw new Error("Failed to load draft proposal");
+        if (current.status !== "draft") {
+          setSuccessMessage(
+            `Proposal sent to ${reservation.member.email}`,
+          );
         }
 
-        const proposal = (await proposalRes.json()) as { items: ProposalItem[] };
+        const proposalRes = await fetch(`/api/proposals/${current.id}`);
+        if (!proposalRes.ok) {
+          throw new Error("Failed to load proposal");
+        }
+
+        const proposal = (await proposalRes.json()) as ProposalDetails;
 
         if (!cancelled) {
           setItems(proposal.items);
+          setNotes(proposal.notes ?? "");
+          lastSavedNotes.current = proposal.notes ?? "";
         }
       } catch (loadError) {
         if (!cancelled) {
@@ -145,17 +290,115 @@ export function ConciergeDashboard({
       }
     }
 
-    void loadDraftProposal();
+    void loadProposal();
 
     return () => {
       cancelled = true;
     };
-  }, [reservation.id]);
+  }, [reservation.id, reservation.member.email]);
+
+  useEffect(() => {
+    return () => {
+      if (notesSaveTimeout.current) {
+        clearTimeout(notesSaveTimeout.current);
+      }
+    };
+  }, []);
+
+  async function saveNotes(nextNotes: string) {
+    const normalized = nextNotes.trim();
+
+    if (
+      !proposalId ||
+      proposalStatusRef.current !== "draft" ||
+      normalized === lastSavedNotes.current
+    ) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/proposals/${proposalId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ notes: normalized || null }),
+      });
+
+      if (!response.ok) {
+        const body = (await response.json()) as { error?: string };
+        throw new Error(body.error ?? "Failed to save message");
+      }
+
+      lastSavedNotes.current = normalized;
+    } catch (saveError) {
+      setError(
+        saveError instanceof Error ? saveError.message : "Failed to save message",
+      );
+    }
+  }
+
+  function handleNotesChange(value: string) {
+    setNotes(value);
+
+    if (notesSaveTimeout.current) {
+      clearTimeout(notesSaveTimeout.current);
+    }
+
+    notesSaveTimeout.current = setTimeout(() => {
+      void saveNotes(value);
+    }, 500);
+  }
+
+  function handleNotesBlur() {
+    if (notesSaveTimeout.current) {
+      clearTimeout(notesSaveTimeout.current);
+    }
+
+    void saveNotes(notes);
+  }
+
+  async function handleSend() {
+    if (!proposalId || !isDraft) {
+      return;
+    }
+
+    setSending(true);
+    setError(null);
+
+    if (notesSaveTimeout.current) {
+      clearTimeout(notesSaveTimeout.current);
+    }
+
+    try {
+      const response = await fetch(`/api/proposals/${proposalId}/send`, {
+        method: "POST",
+      });
+
+      if (!response.ok) {
+        const body = (await response.json()) as { error?: string };
+        throw new Error(body.error ?? "Failed to send proposal");
+      }
+
+      const result = (await response.json()) as {
+        proposal: ProposalDetails;
+      };
+
+      setProposalStatus("sent");
+      setItems(result.proposal.items);
+      setNotes(result.proposal.notes ?? "");
+      setSuccessMessage(`Proposal sent to ${reservation.member.email}`);
+    } catch (sendError) {
+      setError(
+        sendError instanceof Error ? sendError.message : "Failed to send proposal",
+      );
+    } finally {
+      setSending(false);
+    }
+  }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (!draftProposalId) {
+    if (!proposalId || !isDraft) {
       return;
     }
 
@@ -169,7 +412,7 @@ export function ConciergeDashboard({
     setError(null);
 
     try {
-      const response = await fetch(`/api/proposals/${draftProposalId}/items`, {
+      const response = await fetch(`/api/proposals/${proposalId}/items`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -204,7 +447,7 @@ export function ConciergeDashboard({
   }
 
   async function handleRemove(itemId: string) {
-    if (!draftProposalId) {
+    if (!proposalId || !isDraft) {
       return;
     }
 
@@ -212,7 +455,7 @@ export function ConciergeDashboard({
 
     try {
       const response = await fetch(
-        `/api/proposals/${draftProposalId}/items/${itemId}`,
+        `/api/proposals/${proposalId}/items/${itemId}`,
         { method: "DELETE" },
       );
 
@@ -233,6 +476,15 @@ export function ConciergeDashboard({
 
   return (
     <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-4 p-4">
+      {successMessage && (
+        <div
+          className="rounded-lg border border-green-600/30 bg-green-50 px-3 py-2 text-sm text-green-900 dark:bg-green-950/40 dark:text-green-100"
+          role="status"
+        >
+          {successMessage}
+        </div>
+      )}
+
       <Card>
         <CardHeader className="gap-0.5 pb-2">
           <CardTitle className="text-lg">{reservation.member.name}</CardTitle>
@@ -260,6 +512,12 @@ export function ConciergeDashboard({
           )}
         </div>
 
+        {!isDraft && (
+          <p className="text-xs text-muted-foreground">
+            This proposal has been sent and can no longer be edited.
+          </p>
+        )}
+
         <form
           onSubmit={handleSubmit}
           className="grid gap-2 rounded-lg border bg-card p-3 sm:grid-cols-2 lg:grid-cols-6"
@@ -271,6 +529,7 @@ export function ConciergeDashboard({
               onValueChange={(value) =>
                 setForm((current) => ({ ...current, category: value ?? "" }))
               }
+              disabled={!isDraft || loading}
             >
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select" />
@@ -294,6 +553,7 @@ export function ConciergeDashboard({
               }
               placeholder="Sunset dinner"
               required
+              disabled={!isDraft || loading}
             />
           </label>
 
@@ -310,6 +570,7 @@ export function ConciergeDashboard({
               placeholder="Optional notes"
               rows={1}
               className="min-h-8 field-sizing-fixed resize-none py-1.5"
+              disabled={!isDraft || loading}
             />
           </label>
 
@@ -325,6 +586,7 @@ export function ConciergeDashboard({
                 }))
               }
               required
+              disabled={!isDraft || loading}
             />
           </label>
 
@@ -340,6 +602,7 @@ export function ConciergeDashboard({
               }
               placeholder="0"
               required
+              disabled={!isDraft || loading}
             />
           </label>
 
@@ -347,7 +610,7 @@ export function ConciergeDashboard({
             <Button
               type="submit"
               className="w-full"
-              disabled={submitting || loading || !draftProposalId}
+              disabled={submitting || loading || !proposalId || !isDraft}
             >
               {submitting ? "Adding…" : "Add item"}
             </Button>
@@ -367,7 +630,7 @@ export function ConciergeDashboard({
         </h2>
 
         {loading ? (
-          <p className="text-sm text-muted-foreground">Loading draft proposal…</p>
+          <p className="text-sm text-muted-foreground">Loading proposal…</p>
         ) : items.length === 0 ? (
           <p className="rounded-lg border border-dashed px-3 py-6 text-sm text-muted-foreground">
             No items yet. Add the first experience above.
@@ -395,21 +658,72 @@ export function ConciergeDashboard({
                     <span className="shrink-0 text-sm font-medium tabular-nums">
                       {formatPrice(item.price)}
                     </span>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon-xs"
-                      aria-label={`Remove ${item.title}`}
-                      onClick={() => handleRemove(item.id)}
-                    >
-                      <XIcon />
-                    </Button>
+                    {isDraft && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon-xs"
+                        aria-label={`Remove ${item.title}`}
+                        onClick={() => handleRemove(item.id)}
+                      >
+                        <XIcon />
+                      </Button>
+                    )}
                   </CardContent>
                 </Card>
               </li>
             ))}
           </ul>
         )}
+      </section>
+
+      <section className="space-y-3 rounded-lg border bg-card p-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-sm font-semibold tracking-wide uppercase">
+            Preview & Send
+          </h2>
+          <div className="flex items-center gap-2">
+            <Dialog>
+              <DialogTrigger render={<Button variant="outline" size="sm" />}>
+                Preview
+              </DialogTrigger>
+              <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
+                <DialogHeader>
+                  <DialogTitle>Member preview</DialogTitle>
+                  <DialogDescription>
+                    This is what {reservation.member.name} will receive.
+                  </DialogDescription>
+                </DialogHeader>
+                <ProposalMemberPreview
+                  reservation={reservation}
+                  items={items}
+                  notes={notes}
+                />
+              </DialogContent>
+            </Dialog>
+            <Button
+              size="sm"
+              onClick={() => void handleSend()}
+              disabled={sending || loading || !proposalId || !isDraft}
+            >
+              {sending ? "Sending…" : "Send Proposal"}
+            </Button>
+          </div>
+        </div>
+
+        <label className="block space-y-1">
+          <span className="text-xs text-muted-foreground">
+            Message for {memberName}
+          </span>
+          <Textarea
+            value={notes}
+            onChange={(event) => handleNotesChange(event.target.value)}
+            onBlur={handleNotesBlur}
+            placeholder={`Add a personal note for ${memberName}…`}
+            rows={3}
+            disabled={!isDraft || loading}
+          />
+        </label>
       </section>
     </main>
   );
