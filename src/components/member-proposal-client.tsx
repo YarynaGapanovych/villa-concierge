@@ -97,7 +97,7 @@ export function MemberProposalClient({
       )}
 
       {error && (
-        <p className="mt-4 text-sm text-red-700" role="alert">
+        <p className="mt-4 text-base text-red-700" role="alert">
           {error}
         </p>
       )}

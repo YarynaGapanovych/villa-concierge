@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import { XIcon } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -119,27 +119,29 @@ function ProposalMemberPreview({
     <div className="space-y-4">
       <div className="space-y-1 border-b pb-3">
         <p className="font-medium">{reservation.member.name}</p>
-        <p className="text-sm text-muted-foreground">
+        <p className="text-base text-muted-foreground">
           {reservation.destination} · {reservation.villa}
         </p>
-        <p className="text-sm">
+        <p className="text-base">
           {formatStayDates(reservation.arrivalDate, reservation.departureDate)}
         </p>
       </div>
 
       {notes.trim() && (
-        <blockquote className="rounded-lg border-l-2 border-primary/40 bg-muted/40 px-3 py-2 text-sm italic">
+        <blockquote className="rounded-lg border-l-2 border-primary/40 bg-muted/40 px-3 py-2 text-base italic">
           {notes.trim()}
         </blockquote>
       )}
 
       {items.length === 0 ? (
-        <p className="text-sm text-muted-foreground">No itinerary items yet.</p>
+        <p className="text-base text-muted-foreground">
+          No itinerary items yet.
+        </p>
       ) : (
         <div className="space-y-4">
           {[...groupedItems.entries()].map(([category, categoryItems]) => (
             <div key={category} className="space-y-2">
-              <h3 className="text-xs font-semibold tracking-wide uppercase text-muted-foreground">
+              <h3 className="text-sm font-semibold tracking-wide uppercase text-muted-foreground">
                 {category}
               </h3>
               <ul className="space-y-2">
@@ -150,33 +152,33 @@ function ProposalMemberPreview({
                       new Date(b.scheduledAt).getTime(),
                   )
                   .map((item) => (
-                  <li
-                    key={item.id}
-                    className="flex items-start justify-between gap-3 text-sm"
-                  >
-                    <div className="min-w-0">
-                      <p className="font-medium">{item.title}</p>
-                      {item.description && (
-                        <p className="text-xs text-muted-foreground">
-                          {item.description}
+                    <li
+                      key={item.id}
+                      className="flex items-start justify-between gap-3 text-base"
+                    >
+                      <div className="min-w-0">
+                        <p className="font-medium">{item.title}</p>
+                        {item.description && (
+                          <p className="text-sm text-muted-foreground">
+                            {item.description}
+                          </p>
+                        )}
+                        <p className="text-sm text-muted-foreground tabular-nums">
+                          {formatItemDateTime(item.scheduledAt)}
                         </p>
-                      )}
-                      <p className="text-xs text-muted-foreground tabular-nums">
-                        {formatItemDateTime(item.scheduledAt)}
-                      </p>
-                    </div>
-                    <span className="shrink-0 font-medium tabular-nums">
-                      {formatPrice(item.price)}
-                    </span>
-                  </li>
-                ))}
+                      </div>
+                      <span className="shrink-0 font-medium tabular-nums">
+                        {formatPrice(item.price)}
+                      </span>
+                    </li>
+                  ))}
               </ul>
             </div>
           ))}
         </div>
       )}
 
-      <div className="flex items-center justify-between border-t pt-3 text-sm font-semibold">
+      <div className="flex items-center justify-between border-t pt-3 text-base font-semibold">
         <span>Total</span>
         <span className="tabular-nums">{formatPrice(total)}</span>
       </div>
@@ -258,9 +260,7 @@ export function ConciergeDashboard({
         setProposalStatus(current.status);
 
         if (current.status !== "draft") {
-          setSuccessMessage(
-            `Proposal sent to ${reservation.member.email}`,
-          );
+          setSuccessMessage(`Proposal sent to ${reservation.member.email}`);
         }
 
         const proposalRes = await fetch(`/api/proposals/${current.id}`);
@@ -331,7 +331,9 @@ export function ConciergeDashboard({
       lastSavedNotes.current = normalized;
     } catch (saveError) {
       setError(
-        saveError instanceof Error ? saveError.message : "Failed to save message",
+        saveError instanceof Error
+          ? saveError.message
+          : "Failed to save message",
       );
     }
   }
@@ -388,7 +390,9 @@ export function ConciergeDashboard({
       setSuccessMessage(`Proposal sent to ${reservation.member.email}`);
     } catch (sendError) {
       setError(
-        sendError instanceof Error ? sendError.message : "Failed to send proposal",
+        sendError instanceof Error
+          ? sendError.message
+          : "Failed to send proposal",
       );
     } finally {
       setSending(false);
@@ -403,7 +407,12 @@ export function ConciergeDashboard({
     }
 
     const price = Number(form.price);
-    if (!form.category || !form.title || !form.scheduledAt || Number.isNaN(price)) {
+    if (
+      !form.category ||
+      !form.title ||
+      !form.scheduledAt ||
+      Number.isNaN(price)
+    ) {
       setError("Category, title, scheduled time, and price are required");
       return;
     }
@@ -433,13 +442,16 @@ export function ConciergeDashboard({
       setItems((current) =>
         [...current, item].sort(
           (a, b) =>
-            new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime(),
+            new Date(a.scheduledAt).getTime() -
+            new Date(b.scheduledAt).getTime(),
         ),
       );
       setForm(emptyForm);
     } catch (submitError) {
       setError(
-        submitError instanceof Error ? submitError.message : "Failed to add item",
+        submitError instanceof Error
+          ? submitError.message
+          : "Failed to add item",
       );
     } finally {
       setSubmitting(false);
@@ -467,7 +479,9 @@ export function ConciergeDashboard({
       setItems((current) => current.filter((item) => item.id !== itemId));
     } catch (removeError) {
       setError(
-        removeError instanceof Error ? removeError.message : "Failed to remove item",
+        removeError instanceof Error
+          ? removeError.message
+          : "Failed to remove item",
       );
     }
   }
@@ -475,55 +489,62 @@ export function ConciergeDashboard({
   const total = items.reduce((sum, item) => sum + item.price, 0);
 
   return (
-    <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-4 p-4">
+    <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-8 p-4">
       {successMessage && (
         <div
-          className="rounded-lg border border-green-600/30 bg-green-50 px-3 py-2 text-sm text-green-900 dark:bg-green-950/40 dark:text-green-100"
+          className="rounded-lg border border-green-600/30 bg-green-50 px-3 py-2 text-base text-green-900 dark:bg-green-950/40 dark:text-green-100"
           role="status"
         >
           {successMessage}
         </div>
       )}
 
-      <Card>
-        <CardHeader className="gap-0.5 pb-2">
-          <CardTitle className="text-lg">{reservation.member.name}</CardTitle>
-          <CardDescription className="text-sm">
+      <Card className="[--card-spacing:--spacing(5)]">
+        <CardHeader className="gap-1 pb-2">
+          <CardTitle className="font-heading text-2xl font-semibold tracking-tight">
+            {reservation.member.name}
+          </CardTitle>
+          <CardDescription className="text-base">
             {reservation.destination} · {reservation.villa}
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
+        <CardContent className="flex flex-wrap items-center gap-x-4 gap-y-1 text-base leading-relaxed">
           <span className="font-medium">
-            {formatStayDates(reservation.arrivalDate, reservation.departureDate)}
+            {formatStayDates(
+              reservation.arrivalDate,
+              reservation.departureDate,
+            )}
           </span>
-          <span className="text-muted-foreground">{reservation.member.email}</span>
+          <span className="text-sm text-muted-foreground">
+            {reservation.member.email}
+          </span>
         </CardContent>
       </Card>
 
-      <section className="space-y-3">
+      <section className="space-y-4">
         <div className="flex items-baseline justify-between gap-2">
-          <h2 className="text-sm font-semibold tracking-wide uppercase">
+          <h2 className="font-heading text-base font-semibold tracking-[0.14em] uppercase leading-relaxed">
             Add Itinerary Item
           </h2>
           {items.length > 0 && (
-            <span className="text-xs text-muted-foreground">
+            <span className="text-sm text-muted-foreground">
               {items.length} items · {formatPrice(total)}
             </span>
           )}
         </div>
 
         {!isDraft && (
-          <p className="text-xs text-muted-foreground">
+          <p className="text-sm text-muted-foreground">
             This proposal has been sent and can no longer be edited.
           </p>
         )}
 
         <form
           onSubmit={handleSubmit}
-          className="grid gap-2 rounded-lg border bg-card p-3 sm:grid-cols-2 lg:grid-cols-6"
+          className="grid gap-3 rounded-xl border border-border bg-card p-5 sm:grid-cols-2 lg:grid-cols-6"
         >
-          <label className="space-y-1 lg:col-span-1">
-            <span className="text-xs text-muted-foreground">Category</span>
+          <label className="space-y-1.5 lg:col-span-1">
+            <span className="text-xs leading-relaxed text-muted-foreground">Category</span>
             <Select
               value={form.category || null}
               onValueChange={(value) =>
@@ -544,12 +565,15 @@ export function ConciergeDashboard({
             </Select>
           </label>
 
-          <label className="space-y-1 lg:col-span-1">
-            <span className="text-xs text-muted-foreground">Title</span>
+          <label className="space-y-1.5 lg:col-span-1">
+            <span className="text-xs leading-relaxed text-muted-foreground">Title</span>
             <Input
               value={form.title}
               onChange={(event) =>
-                setForm((current) => ({ ...current, title: event.target.value }))
+                setForm((current) => ({
+                  ...current,
+                  title: event.target.value,
+                }))
               }
               placeholder="Sunset dinner"
               required
@@ -557,8 +581,8 @@ export function ConciergeDashboard({
             />
           </label>
 
-          <label className="space-y-1 sm:col-span-2 lg:col-span-1">
-            <span className="text-xs text-muted-foreground">Description</span>
+          <label className="space-y-1.5 sm:col-span-2 lg:col-span-1">
+            <span className="text-xs leading-relaxed text-muted-foreground">Description</span>
             <Textarea
               value={form.description}
               onChange={(event) =>
@@ -574,8 +598,8 @@ export function ConciergeDashboard({
             />
           </label>
 
-          <label className="space-y-1 lg:col-span-1">
-            <span className="text-xs text-muted-foreground">Scheduled</span>
+          <label className="space-y-1.5 lg:col-span-1">
+            <span className="text-xs leading-relaxed text-muted-foreground">Scheduled</span>
             <Input
               type="datetime-local"
               value={form.scheduledAt}
@@ -590,15 +614,18 @@ export function ConciergeDashboard({
             />
           </label>
 
-          <label className="space-y-1 lg:col-span-1">
-            <span className="text-xs text-muted-foreground">Price</span>
+          <label className="space-y-1.5 lg:col-span-1">
+            <span className="text-xs leading-relaxed text-muted-foreground">Price</span>
             <Input
               type="number"
               min="0"
               step="1"
               value={form.price}
               onChange={(event) =>
-                setForm((current) => ({ ...current, price: event.target.value }))
+                setForm((current) => ({
+                  ...current,
+                  price: event.target.value,
+                }))
               }
               placeholder="0"
               required
@@ -618,21 +645,21 @@ export function ConciergeDashboard({
         </form>
 
         {error && (
-          <p className="text-sm text-destructive" role="alert">
+          <p className="text-base text-destructive" role="alert">
             {error}
           </p>
         )}
       </section>
 
-      <section className="space-y-2">
-        <h2 className="text-sm font-semibold tracking-wide uppercase">
+      <section className="space-y-3">
+        <h2 className="font-heading text-base font-semibold tracking-[0.14em] uppercase leading-relaxed">
           Itinerary ({items.length})
         </h2>
 
         {loading ? (
-          <p className="text-sm text-muted-foreground">Loading proposal…</p>
+          <p className="text-base text-muted-foreground">Loading proposal…</p>
         ) : items.length === 0 ? (
-          <p className="rounded-lg border border-dashed px-3 py-6 text-sm text-muted-foreground">
+          <p className="rounded-lg border border-dashed px-3 py-6 text-base text-muted-foreground">
             No items yet. Add the first experience above.
           </p>
         ) : (
@@ -647,15 +674,15 @@ export function ConciergeDashboard({
                     <div className="min-w-0 flex-1">
                       <p className="truncate font-medium">{item.title}</p>
                       {item.description && (
-                        <p className="truncate text-xs text-muted-foreground">
+                        <p className="truncate text-sm text-muted-foreground">
                           {item.description}
                         </p>
                       )}
                     </div>
-                    <span className="shrink-0 text-xs text-muted-foreground tabular-nums">
+                    <span className="shrink-0 text-sm text-muted-foreground tabular-nums">
                       {formatItemDateTime(item.scheduledAt)}
                     </span>
-                    <span className="shrink-0 text-sm font-medium tabular-nums">
+                    <span className="shrink-0 text-base font-medium tabular-nums">
                       {formatPrice(item.price)}
                     </span>
                     {isDraft && (
@@ -677,9 +704,9 @@ export function ConciergeDashboard({
         )}
       </section>
 
-      <section className="space-y-3 rounded-lg border bg-card p-3">
+      <section className="space-y-4 rounded-xl border border-border bg-card p-5">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-sm font-semibold tracking-wide uppercase">
+          <h2 className="font-heading text-base font-semibold tracking-[0.14em] uppercase leading-relaxed">
             Preview & Send
           </h2>
           <div className="flex items-center gap-2">
@@ -711,8 +738,8 @@ export function ConciergeDashboard({
           </div>
         </div>
 
-        <label className="block space-y-1">
-          <span className="text-xs text-muted-foreground">
+        <label className="block space-y-1.5">
+          <span className="text-xs leading-relaxed text-muted-foreground">
             Message for {memberName}
           </span>
           <Textarea

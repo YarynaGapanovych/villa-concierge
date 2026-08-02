@@ -29,25 +29,25 @@ function ItineraryItemRow({
     <li className="flex flex-col gap-3 px-6 py-5 sm:flex-row sm:items-start sm:justify-between">
       <div className="min-w-0 space-y-1.5">
         {showCategory && (
-          <p className="text-xs tracking-[0.2em] text-stone-500 uppercase">
+          <p className="text-sm tracking-[0.2em] text-stone-500 uppercase">
             {item.category}
           </p>
         )}
-        <p className="font-[family-name:var(--font-proposal-display)] text-xl font-medium text-stone-900">
+        <p className="font-[family-name:var(--font-proposal-display)] text-2xl font-medium text-stone-900">
           {item.title}
         </p>
         {item.description && (
-          <p className="max-w-prose text-sm leading-relaxed text-stone-600">
+          <p className="max-w-prose text-base leading-relaxed text-stone-600">
             {item.description}
           </p>
         )}
-        <p className="text-xs tracking-wide text-stone-500 uppercase">
+        <p className="text-sm tracking-wide text-stone-500 uppercase">
           {showFullDateTime
             ? formatItemDateTime(item.scheduledAt)
             : formatItemTime(item.scheduledAt)}
         </p>
       </div>
-      <p className="shrink-0 font-[family-name:var(--font-proposal-display)] text-lg font-medium text-stone-800 tabular-nums">
+      <p className="shrink-0 font-[family-name:var(--font-proposal-display)] text-xl font-medium text-stone-800 tabular-nums">
         {formatPriceDetailed(item.price)}
       </p>
     </li>
@@ -64,7 +64,7 @@ function CategorySection({
   return (
     <section className="overflow-hidden rounded-2xl border border-stone-200/80 bg-white/80 shadow-sm shadow-stone-200/50 backdrop-blur-sm">
       <header className="border-b border-stone-100 px-6 py-4">
-        <h2 className="font-[family-name:var(--font-proposal-display)] text-2xl font-medium tracking-wide text-stone-800">
+        <h2 className="font-[family-name:var(--font-proposal-display)] text-3xl font-medium tracking-wide text-stone-800">
           {category}
         </h2>
       </header>
@@ -89,12 +89,12 @@ function DaySection({
   return (
     <section className="overflow-hidden rounded-2xl border border-stone-200/80 bg-white/80 shadow-sm shadow-stone-200/50 backdrop-blur-sm">
       <header className="border-b border-stone-100 px-6 py-4">
-        <h2 className="font-[family-name:var(--font-proposal-display)] text-2xl font-medium tracking-wide text-stone-800">
+        <h2 className="font-[family-name:var(--font-proposal-display)] text-3xl font-medium tracking-wide text-stone-800">
           {formatTimelineDayLabel(dayNumber, date)}
         </h2>
       </header>
       {items.length === 0 ? (
-        <p className="px-6 py-8 text-center text-sm text-stone-500 italic">
+        <p className="px-6 py-8 text-center text-base text-stone-500 italic">
           Nothing scheduled yet
         </p>
       ) : (
@@ -141,7 +141,7 @@ function ViewToggle({
             role="tab"
             aria-selected={isActive}
             onClick={() => onChange(option.id)}
-            className={`rounded-full px-5 py-2 font-[family-name:var(--font-proposal-display)] text-sm tracking-wide transition-all ${
+            className={`rounded-full px-5 py-2 font-[family-name:var(--font-proposal-display)] text-base tracking-wide transition-all ${
               isActive
                 ? "bg-stone-900 text-stone-50 shadow-sm"
                 : "text-stone-600 hover:text-stone-900"

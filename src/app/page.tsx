@@ -21,7 +21,7 @@ export default async function Home() {
       <>
         <ConciergeNav active="dashboard" />
         <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col justify-center p-4">
-          <p className="text-sm text-muted-foreground">
+          <p className="text-base text-muted-foreground">
             No reservation found. Run{" "}
             <code className="rounded bg-muted px-1 py-0.5">pnpm exec prisma db seed</code>{" "}
             to load sample data.
