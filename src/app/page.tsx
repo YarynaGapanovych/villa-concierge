@@ -1,4 +1,5 @@
 import { ConciergeDashboard } from "@/components/concierge-dashboard";
+import { ConciergeNav } from "@/components/concierge-nav";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -17,18 +18,23 @@ export default async function Home() {
 
   if (!reservation) {
     return (
-      <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col justify-center p-4">
-        <p className="text-sm text-muted-foreground">
-          No reservation found. Run{" "}
-          <code className="rounded bg-muted px-1 py-0.5">pnpm exec prisma db seed</code>{" "}
-          to load sample data.
-        </p>
-      </main>
+      <>
+        <ConciergeNav active="dashboard" />
+        <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col justify-center p-4">
+          <p className="text-sm text-muted-foreground">
+            No reservation found. Run{" "}
+            <code className="rounded bg-muted px-1 py-0.5">pnpm exec prisma db seed</code>{" "}
+            to load sample data.
+          </p>
+        </main>
+      </>
     );
   }
 
   return (
-    <ConciergeDashboard
+    <>
+      <ConciergeNav active="dashboard" />
+      <ConciergeDashboard
       reservation={{
         id: reservation.id,
         destination: reservation.destination,
@@ -38,5 +44,6 @@ export default async function Home() {
         member: reservation.member,
       }}
     />
+    </>
   );
 }
