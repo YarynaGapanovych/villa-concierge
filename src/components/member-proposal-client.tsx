@@ -1,43 +1,33 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import {
   MemberProposalActionButton,
-  MemberProposalConfirmed,
   MemberProposalView,
   type MemberProposalData,
 } from "@/components/member-proposal-view";
-import { memberFirstName } from "@/lib/proposal-utils";
-
-const TRANSITION_MS = 400;
 
 export function MemberProposalClient({
   initialProposal,
 }: {
   initialProposal: MemberProposalData;
 }) {
-  const [proposal, setProposal] = useState(initialProposal);
-  const [visible, setVisible] = useState(true);
+  const router = useRouter();
+  const [proposal] = useState(initialProposal);
   const [updating, setUpdating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const memberName = memberFirstName(proposal.reservation.member.name);
-  const total = proposal.items.reduce((sum, item) => sum + item.price, 0);
-  const { status } = proposal;
-
-  async function transitionToStatus(nextStatus: "approved" | "paid") {
+  async function handleApprove() {
     setUpdating(true);
     setError(null);
-    setVisible(false);
-
-    await new Promise((resolve) => setTimeout(resolve, TRANSITION_MS));
 
     try {
       const patchRes = await fetch(`/api/proposals/${proposal.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: nextStatus }),
+        body: JSON.stringify({ status: "approved" }),
       });
 
       if (!patchRes.ok) {
@@ -45,16 +35,8 @@ export function MemberProposalClient({
         throw new Error(body.error ?? "Failed to update proposal");
       }
 
-      const fetchRes = await fetch(`/api/proposals/${proposal.id}`);
-      if (!fetchRes.ok) {
-        throw new Error("Failed to refresh proposal");
-      }
-
-      const refreshed = (await fetchRes.json()) as MemberProposalData;
-      setProposal(refreshed);
-      setVisible(true);
+      router.push(`/proposal/${proposal.id}/pay`);
     } catch (updateError) {
-      setVisible(true);
       setError(
         updateError instanceof Error
           ? updateError.message
@@ -65,44 +47,23 @@ export function MemberProposalClient({
     }
   }
 
-  const actions = (
-    <div
-      className="text-center transition-opacity duration-500 ease-in-out"
-      style={{ opacity: visible ? 1 : 0 }}
-    >
-      {status === "sent" && (
+  const actions =
+    proposal.status === "sent" ? (
+      <div className="text-center">
         <MemberProposalActionButton
-          onClick={() => void transitionToStatus("approved")}
+          onClick={() => void handleApprove()}
           disabled={updating}
         >
           {updating ? "Confirming…" : "Approve Proposal"}
         </MemberProposalActionButton>
-      )}
 
-      {status === "approved" && (
-        <MemberProposalActionButton
-          onClick={() => void transitionToStatus("paid")}
-          disabled={updating}
-        >
-          {updating ? "Processing…" : "Pay & Lock In"}
-        </MemberProposalActionButton>
-      )}
-
-      {status === "paid" && (
-        <MemberProposalConfirmed
-          memberName={memberName}
-          destination={proposal.reservation.destination}
-          total={total}
-        />
-      )}
-
-      {error && (
-        <p className="mt-4 text-base text-red-700" role="alert">
-          {error}
-        </p>
-      )}
-    </div>
-  );
+        {error && (
+          <p className="mt-4 text-base text-red-700" role="alert">
+            {error}
+          </p>
+        )}
+      </div>
+    ) : null;
 
   return <MemberProposalView proposal={proposal} actions={actions} />;
 }
