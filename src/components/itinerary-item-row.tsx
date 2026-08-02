@@ -175,18 +175,18 @@ export function ItineraryItemRow({
 
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="space-y-1.5 sm:col-span-2">
-                <span className="text-xs text-muted-foreground">Title</span>
+                <span className="text-sm text-muted-foreground">Title</span>
                 <Input
                   {...register("title")}
                   aria-invalid={errors.title ? true : undefined}
                 />
                 {errors.title && (
-                  <p className="text-xs text-destructive">{errors.title.message}</p>
+                  <p className="text-sm text-destructive">{errors.title.message}</p>
                 )}
               </label>
 
               <label className="space-y-1.5">
-                <span className="text-xs text-muted-foreground">Scheduled</span>
+                <span className="text-sm text-muted-foreground">Scheduled</span>
                 <Input
                   type="datetime-local"
                   min={scheduledMin}
@@ -195,14 +195,14 @@ export function ItineraryItemRow({
                   {...register("scheduledAt")}
                 />
                 {errors.scheduledAt && (
-                  <p className="text-xs text-destructive">
+                  <p className="text-sm text-destructive">
                     {errors.scheduledAt.message}
                   </p>
                 )}
               </label>
 
               <label className="space-y-1.5">
-                <span className="text-xs text-muted-foreground">Price</span>
+                <span className="text-sm text-muted-foreground">Price</span>
                 <div className="relative">
                   <span
                     aria-hidden
@@ -220,12 +220,12 @@ export function ItineraryItemRow({
                   />
                 </div>
                 {errors.price && (
-                  <p className="text-xs text-destructive">{errors.price.message}</p>
+                  <p className="text-sm text-destructive">{errors.price.message}</p>
                 )}
               </label>
 
               <label className="space-y-1.5 sm:col-span-2">
-                <span className="text-xs text-muted-foreground">Description</span>
+                <span className="text-sm text-muted-foreground">Description</span>
                 <Textarea rows={2} {...register("description")} />
               </label>
             </div>
@@ -249,15 +249,15 @@ export function ItineraryItemRow({
           <div className="min-w-0 flex-1">
             <p className="truncate font-medium">{item.title}</p>
             {item.description && (
-              <p className="truncate text-sm text-muted-foreground">
+              <p className="truncate text-base text-muted-foreground">
                 {item.description}
               </p>
             )}
           </div>
-          <span className="shrink-0 text-sm text-muted-foreground tabular-nums">
+          <span className="shrink-0 text-base text-muted-foreground tabular-nums">
             {formatItemDateTime(item.scheduledAt)}
           </span>
-          <span className="shrink-0 text-base font-medium tabular-nums">
+          <span className="shrink-0 text-lg font-medium tabular-nums">
             {formatPrice(item.price)}
           </span>
           {editable && (

@@ -73,16 +73,16 @@ export function MemberProposalPayClient({
       <header className="relative overflow-hidden bg-gradient-to-b from-stone-200/70 via-stone-100 to-stone-50 px-6 pt-16 pb-20 text-center">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(255,255,255,0.55),transparent_60%)]" />
         <div className="relative mx-auto max-w-3xl space-y-5">
-          <p className="font-[family-name:var(--font-proposal-display)] text-base tracking-[0.35em] text-stone-500 uppercase">
+          <p className="font-[family-name:var(--font-proposal-display)] text-lg tracking-[0.35em] text-stone-500 uppercase">
             Confirm your stay
           </p>
-          <h1 className="font-[family-name:var(--font-proposal-display)] text-5xl leading-tight font-medium text-stone-900 md:text-6xl">
+          <h1 className="font-[family-name:var(--font-proposal-display)] text-6xl leading-tight font-medium text-stone-900 md:text-7xl">
             {reservation.villa}
           </h1>
-          <p className="font-[family-name:var(--font-proposal-display)] text-3xl text-stone-700 md:text-4xl">
+          <p className="font-[family-name:var(--font-proposal-display)] text-4xl text-stone-700 md:text-5xl">
             {reservation.destination}
           </p>
-          <p className="text-base tracking-wide text-stone-600">
+          <p className="text-lg tracking-wide text-stone-600">
             {formatStayDates(reservation.arrivalDate, reservation.departureDate)}
           </p>
         </div>
@@ -90,10 +90,10 @@ export function MemberProposalPayClient({
 
       <div className="mx-auto max-w-3xl px-6 pb-24">
         <section className="-mt-10 mb-12 text-center">
-          <p className="font-[family-name:var(--font-proposal-display)] text-3xl text-stone-800 md:text-4xl">
+          <p className="font-[family-name:var(--font-proposal-display)] text-4xl text-stone-800 md:text-5xl">
             Almost there, {memberName}
           </p>
-          <p className="mt-2 text-base text-stone-600">
+          <p className="mt-2 text-lg text-stone-600">
             Your proposal is approved. Complete payment to lock in your
             experiences.
           </p>
@@ -111,13 +111,13 @@ export function MemberProposalPayClient({
             />
           ) : (
             <>
-              <p className="text-sm tracking-[0.25em] text-stone-500 uppercase">
+              <p className="text-base tracking-[0.25em] text-stone-500 uppercase">
                 Amount due
               </p>
-              <p className="mt-3 font-[family-name:var(--font-proposal-display)] text-6xl font-medium text-stone-900 tabular-nums md:text-7xl">
+              <p className="mt-3 font-[family-name:var(--font-proposal-display)] text-7xl font-medium text-stone-900 tabular-nums md:text-8xl">
                 {formatPriceDetailed(total)}
               </p>
-              <p className="mt-4 mx-auto max-w-md text-base leading-relaxed text-stone-600">
+              <p className="mt-4 mx-auto max-w-md text-lg leading-relaxed text-stone-600">
                 Payment is simulated for this prototype. Selecting Pay &amp; Lock In
                 confirms your itinerary with your concierge.
               </p>
@@ -133,7 +133,7 @@ export function MemberProposalPayClient({
           )}
 
           {error && (
-            <p className="mt-4 text-base text-red-700" role="alert">
+            <p className="mt-4 text-lg text-red-700" role="alert">
               {error}
             </p>
           )}

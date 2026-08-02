@@ -24,7 +24,7 @@ export function ConciergeNav({
             key={link.href}
             href={link.href}
             className={cn(
-              "rounded-md px-2.5 py-1 text-base font-medium transition-colors",
+              "rounded-md px-2.5 py-1 text-lg font-medium transition-colors",
               isActive
                 ? "bg-primary text-primary-foreground"
                 : "text-muted-foreground hover:bg-muted hover:text-foreground",

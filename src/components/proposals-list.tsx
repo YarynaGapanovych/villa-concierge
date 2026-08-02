@@ -69,13 +69,13 @@ export function ProposalsList() {
 
   if (loading) {
     return (
-      <p className="text-base text-muted-foreground">Loading proposals…</p>
+      <p className="text-lg text-muted-foreground">Loading proposals…</p>
     );
   }
 
   if (error) {
     return (
-      <p className="text-base text-destructive" role="alert">
+      <p className="text-lg text-destructive" role="alert">
         {error}
       </p>
     );
@@ -83,7 +83,7 @@ export function ProposalsList() {
 
   if (proposals.length === 0) {
     return (
-      <p className="rounded-lg border border-dashed px-3 py-6 text-base text-muted-foreground">
+      <p className="rounded-lg border border-dashed px-3 py-6 text-lg text-muted-foreground">
         No proposals yet.
       </p>
     );
@@ -102,25 +102,25 @@ export function ProposalsList() {
                 size="sm"
                 className="py-2 transition-colors hover:bg-muted/40"
               >
-                <CardContent className="flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-0 text-base">
+                <CardContent className="flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-0 text-lg">
                   <div className="min-w-0 flex-1">
                     <p className="font-medium">
                       {proposal.reservation.destination} ·{" "}
                       {proposal.reservation.villa}
                     </p>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-base text-muted-foreground">
                       {proposal.reservation.member.name}
                     </p>
                   </div>
 
                   <ProposalStatusBadge status={proposal.status} />
 
-                  <span className="shrink-0 text-sm tabular-nums text-muted-foreground">
+                  <span className="shrink-0 text-base tabular-nums text-muted-foreground">
                     {itemCount} {itemCount === 1 ? "item" : "items"} ·{" "}
                     {formatPrice(total)}
                   </span>
 
-                  <span className="shrink-0 text-sm text-muted-foreground">
+                  <span className="shrink-0 text-base text-muted-foreground">
                     Created {formatShortDate(proposal.createdAt)}
                     {proposal.sentAt
                       ? ` · Sent ${formatShortDate(proposal.sentAt)}`
