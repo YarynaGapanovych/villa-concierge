@@ -605,6 +605,7 @@ export function ProposalCard({
                 <Button
                   variant="outline"
                   size="sm"
+                  nativeButton={false}
                   render={
                     <Link
                       href={`/proposal/${proposal.id}`}
@@ -647,6 +648,7 @@ export function ProposalCard({
               <Button
                 variant="outline"
                 size="sm"
+                nativeButton={false}
                 render={
                   <Link
                     href={`/proposal/${proposal.id}`}
