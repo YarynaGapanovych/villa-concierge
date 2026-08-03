@@ -4,7 +4,8 @@ import { prisma } from "@/lib/prisma";
 
 export async function GET() {
   try {
-    const reservation = await prisma.reservation.findFirst({
+    const reservations = await prisma.reservation.findMany({
+      orderBy: { arrivalDate: "asc" },
       include: {
         member: {
           select: {
@@ -12,20 +13,27 @@ export async function GET() {
             email: true,
           },
         },
+        proposals: {
+          select: {
+            id: true,
+            status: true,
+            createdAt: true,
+            sentAt: true,
+            items: {
+              select: {
+                price: true,
+              },
+            },
+          },
+          orderBy: { createdAt: "desc" },
+        },
       },
     });
 
-    if (!reservation) {
-      return NextResponse.json(
-        { error: "No reservation found" },
-        { status: 404 },
-      );
-    }
-
-    return NextResponse.json(reservation);
+    return NextResponse.json(reservations);
   } catch {
     return NextResponse.json(
-      { error: "Failed to fetch reservation" },
+      { error: "Failed to fetch reservations" },
       { status: 500 },
     );
   }

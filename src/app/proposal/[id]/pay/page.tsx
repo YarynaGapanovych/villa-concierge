@@ -1,19 +1,17 @@
 import { notFound, redirect } from "next/navigation";
 
-import { MemberProposalClient } from "@/components/member-proposal-client";
+import { MemberProposalPayClient } from "@/components/member-proposal-pay-client";
 import { MemberProposalPreparing } from "@/components/member-proposal-view";
 import { fetchProposal } from "@/lib/fetch-proposal";
 import { memberFirstName } from "@/lib/proposal-utils";
 
 export const dynamic = "force-dynamic";
 
-type ProposalMemberPageProps = {
+type ProposalPayPageProps = {
   params: Promise<{ id: string }>;
 };
 
-export default async function ProposalMemberPage({
-  params,
-}: ProposalMemberPageProps) {
+export default async function ProposalPayPage({ params }: ProposalPayPageProps) {
   const { id } = await params;
   const proposal = await fetchProposal(id);
 
@@ -29,9 +27,9 @@ export default async function ProposalMemberPage({
     );
   }
 
-  if (proposal.status === "approved" || proposal.status === "paid") {
-    redirect(`/proposal/${id}/pay`);
+  if (proposal.status === "sent") {
+    redirect(`/proposal/${id}`);
   }
 
-  return <MemberProposalClient initialProposal={proposal} />;
+  return <MemberProposalPayClient initialProposal={proposal} />;
 }

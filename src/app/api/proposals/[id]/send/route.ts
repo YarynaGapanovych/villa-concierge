@@ -25,6 +25,20 @@ export async function POST(
       return NextResponse.json({ error: "Proposal not found" }, { status: 404 });
     }
 
+    if (proposal.status !== "draft") {
+      return NextResponse.json(
+        { error: "Only draft proposals can be sent" },
+        { status: 400 },
+      );
+    }
+
+    if (proposal.items.length === 0) {
+      return NextResponse.json(
+        { error: "Add at least one itinerary item before sending" },
+        { status: 400 },
+      );
+    }
+
     const now = new Date();
     const itemCount = proposal.items.length;
     const total = proposal.items.reduce((sum, item) => sum + item.price, 0);
