@@ -6,6 +6,7 @@ import {
   formatPriceDetailed,
   formatStayDates,
 } from "@/lib/format-dates";
+import { cn } from "@/lib/utils";
 import {
   memberFirstName,
   type ProposalItemData,
@@ -55,10 +56,19 @@ function ConciergeNote({ note }: { note: string }) {
   );
 }
 
-export function ProposalViewFrame({ children }: { children: ReactNode }) {
+export function ProposalViewFrame({
+  children,
+  embedded = false,
+}: {
+  children: ReactNode;
+  embedded?: boolean;
+}) {
   return (
     <div
-      className={`${displayFont.variable} ${bodyFont.variable} min-h-full font-[family-name:var(--font-proposal-body)] text-stone-800 antialiased`}
+      className={cn(
+        `${displayFont.variable} ${bodyFont.variable} font-[family-name:var(--font-proposal-body)] text-stone-800 antialiased`,
+        !embedded && "min-h-full",
+      )}
     >
       {children}
     </div>
@@ -68,16 +78,18 @@ export function ProposalViewFrame({ children }: { children: ReactNode }) {
 export function ProposalView({
   proposal,
   actions,
+  embedded = false,
 }: {
   proposal: ProposalViewData;
   actions?: ReactNode;
+  embedded?: boolean;
 }) {
   const { reservation, items, notes } = proposal;
   const memberName = memberFirstName(reservation.member.name);
   const total = items.reduce((sum, item) => sum + item.price, 0);
 
   return (
-    <main className="min-h-full bg-stone-50">
+    <main className={cn("bg-stone-50", !embedded && "min-h-full")}>
       <header className="relative overflow-hidden bg-gradient-to-b from-stone-200/70 via-stone-100 to-stone-50 px-6 pt-16 pb-20 text-center">
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(255,255,255,0.55),transparent_60%)]" />
         <div className="relative mx-auto max-w-3xl space-y-5">

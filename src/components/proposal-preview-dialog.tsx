@@ -10,9 +10,9 @@ import {
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
-  DialogContent,
   DialogDescription,
   DialogHeader,
+  DialogScrollContent,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
@@ -73,14 +73,14 @@ export function ProposalPreviewDialog({
       <DialogTrigger render={<Button variant="outline" size="sm" disabled={disabled} />}>
         Preview
       </DialogTrigger>
-      <DialogContent className="grid h-[95vh] max-h-[95vh] w-full max-w-[95vw] grid-rows-[auto_minmax(0,1fr)] gap-0 overflow-hidden p-0 sm:max-w-5xl">
-        <DialogHeader className="border-b border-border px-6 py-4">
+      <DialogScrollContent className="h-[min(95vh,calc(100vh-3rem))] w-full max-w-5xl gap-0 p-0 sm:max-w-5xl">
+        <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
           <DialogTitle>Member preview</DialogTitle>
           <DialogDescription>
             This is what {memberFirstName} will see at their proposal link.
           </DialogDescription>
         </DialogHeader>
-        <div className="overflow-y-auto overscroll-contain">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
           {loading ? (
             <p className="px-6 py-12 text-lg text-muted-foreground">
               Loading preview…
@@ -90,12 +90,12 @@ export function ProposalPreviewDialog({
               {error}
             </p>
           ) : previewData ? (
-            <ProposalViewFrame>
-              <ProposalView proposal={previewData} />
+            <ProposalViewFrame embedded>
+              <ProposalView proposal={previewData} embedded />
             </ProposalViewFrame>
           ) : null}
         </div>
-      </DialogContent>
+      </DialogScrollContent>
     </Dialog>
   );
 }
