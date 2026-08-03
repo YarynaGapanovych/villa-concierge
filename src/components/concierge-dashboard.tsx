@@ -43,7 +43,6 @@ export function ConciergeDashboard({
   const [loading, setLoading] = useState(true);
   const [creatingProposal, setCreatingProposal] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -116,7 +115,6 @@ export function ConciergeDashboard({
   async function handleNewProposal() {
     setCreatingProposal(true);
     setError(null);
-    setSuccessMessage(null);
 
     try {
       const response = await fetch("/api/proposals", {
@@ -150,20 +148,10 @@ export function ConciergeDashboard({
     setProposals((current) =>
       current.map((proposal) => (proposal.id === sent.id ? sent : proposal)),
     );
-    setSuccessMessage(`Proposal sent to ${reservation.member.email}`);
   }
 
   return (
     <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-8 px-4 pt-12 pb-24 md:pt-16">
-      {successMessage && (
-        <div
-          className="rounded-lg border border-green-600/30 bg-green-50 px-3 py-2 text-lg text-green-900 dark:bg-green-950/40 dark:text-green-100"
-          role="status"
-        >
-          {successMessage}
-        </div>
-      )}
-
       <header className="space-y-4">
         <div className="space-y-1">
           <p className="font-[family-name:var(--font-proposal-display)] text-sm tracking-[0.3em] text-stone-500 uppercase">
