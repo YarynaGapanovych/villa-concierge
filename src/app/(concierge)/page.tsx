@@ -1,4 +1,3 @@
-import { ConciergeNav } from "@/components/concierge-nav";
 import { ClientsList } from "@/components/clients-list";
 import { fetchReservations } from "@/lib/fetch-reservations";
 
@@ -12,8 +11,7 @@ export default async function ClientsPage() {
   } catch {
     return (
       <>
-        <ConciergeNav />
-        <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 p-4">
+        <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-4 pt-4 pb-24">
           <p className="text-lg text-destructive" role="alert">
             Failed to load clients. Please try again.
           </p>
@@ -24,13 +22,15 @@ export default async function ClientsPage() {
 
   return (
     <>
-      <ConciergeNav />
-      <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 p-4">
+      <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-4 pt-4 pb-24">
         <header className="space-y-1">
-          <h1 className="font-heading text-3xl font-semibold tracking-tight">
+          <p className="font-[family-name:var(--font-proposal-display)] text-sm tracking-[0.3em] text-stone-500 uppercase">
+            Villa Concierge
+          </p>
+          <h1 className="font-[family-name:var(--font-proposal-display)] text-4xl font-medium text-stone-900 md:text-5xl">
             Clients
           </h1>
-          <p className="text-lg text-muted-foreground">
+          <p className="text-lg text-stone-600">
             Select a member to manage their itinerary proposals.
           </p>
         </header>

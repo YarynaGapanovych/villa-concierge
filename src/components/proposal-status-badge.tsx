@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 
 const STATUS_STYLES: Record<string, string> = {
   draft:
-    "border-border bg-muted text-muted-foreground dark:bg-muted/60",
+    "border-stone-200 bg-stone-100 text-stone-600",
   sent: "border-blue-200 bg-blue-50 text-blue-800 dark:border-blue-900 dark:bg-blue-950 dark:text-blue-200",
   approved:
     "border-green-200 bg-green-50 text-green-800 dark:border-green-900 dark:bg-green-950 dark:text-green-200",

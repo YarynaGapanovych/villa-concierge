@@ -27,6 +27,7 @@ import {
   type ItineraryItemFormInput,
   type ItineraryItemFormOutput,
 } from "@/lib/schemas/itinerary-item";
+import { cn } from "@/lib/utils";
 
 const emptyProposalSendMessage =
   "Add at least one itinerary item before sending this proposal.";
@@ -340,10 +341,10 @@ export function ProposalCard({
     sending || disabled || !isDraft || sortedItems.length === 0;
 
   return (
-    <section className="space-y-6 rounded-xl border border-border bg-card p-5">
-      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border pb-4">
+    <section className="space-y-6 overflow-hidden rounded-2xl border border-stone-200/80 bg-white/80 p-5 shadow-sm shadow-stone-200/50 backdrop-blur-sm">
+      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-stone-100 pb-4">
         <ProposalStatusBadge status={proposal.status} />
-        <div className="text-right text-base text-muted-foreground">
+        <div className="text-right text-base text-stone-500">
           <span className="tabular-nums">
             {sortedItems.length} {sortedItems.length === 1 ? "item" : "items"} ·{" "}
             {formatPrice(totalPrice)}
@@ -359,11 +360,11 @@ export function ProposalCard({
       {isDraft ? (
         <div className="space-y-4">
           <div className="space-y-1">
-            <h2 className="font-heading text-lg font-semibold tracking-[0.14em] uppercase leading-relaxed">
+            <h2 className="font-[family-name:var(--font-proposal-display)] text-lg tracking-[0.14em] text-stone-500 uppercase">
               Add Itinerary Item
             </h2>
             {sortedItems.length > 0 && (
-              <p className="text-base text-muted-foreground">
+              <p className="text-base text-stone-600">
                 Click an item below to edit title, description, schedule, or
                 price.
               </p>
@@ -372,12 +373,12 @@ export function ProposalCard({
 
           <form
             onSubmit={onAddItem}
-            className="flex flex-col gap-2 rounded-xl border border-border bg-background/50 p-5"
+            className="flex flex-col gap-2 rounded-xl border border-stone-200 bg-white/60 p-5"
           >
             <div className="flex flex-col gap-1">
               <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1fr_1.5fr_minmax(220px,1.5fr)_0.8fr] lg:items-start">
                 <label className="flex min-w-0 flex-col gap-1.5">
-                  <span className="text-sm leading-relaxed text-muted-foreground">
+                  <span className="text-sm leading-relaxed text-stone-500">
                     Category
                   </span>
                   <Controller
@@ -408,7 +409,7 @@ export function ProposalCard({
                 </label>
 
                 <label className="flex min-w-0 flex-col gap-1.5">
-                  <span className="text-sm leading-relaxed text-muted-foreground">
+                  <span className="text-sm leading-relaxed text-stone-500">
                     Title
                   </span>
                   <Input
@@ -420,7 +421,7 @@ export function ProposalCard({
                 </label>
 
                 <label className="flex min-w-0 flex-col gap-1.5 lg:min-w-[220px]">
-                  <span className="text-sm leading-relaxed text-muted-foreground">
+                  <span className="text-sm leading-relaxed text-stone-500">
                     Scheduled
                   </span>
                   <Input
@@ -435,13 +436,13 @@ export function ProposalCard({
                 </label>
 
                 <label className="flex min-w-0 flex-col gap-1.5">
-                  <span className="text-sm leading-relaxed text-muted-foreground">
+                  <span className="text-sm leading-relaxed text-stone-500">
                     Price
                   </span>
                   <div className="relative w-full">
                     <span
                       aria-hidden
-                      className="pointer-events-none absolute inset-y-0 left-2.5 flex items-center text-muted-foreground"
+                      className="pointer-events-none absolute inset-y-0 left-2.5 flex items-center text-stone-500"
                     >
                       $
                     </span>
@@ -520,7 +521,8 @@ export function ProposalCard({
             <div className="flex justify-end">
               <Button
                 type="submit"
-                className="h-9 w-full sm:w-auto sm:min-w-[7.5rem]"
+                variant="outline"
+                size="sm"
                 disabled={isSubmitting || disabled}
               >
                 {isSubmitting ? "Adding…" : "Add item"}
@@ -528,19 +530,15 @@ export function ProposalCard({
             </div>
           </form>
         </div>
-      ) : (
-        <p className="text-base text-muted-foreground">
-          This proposal has been sent and can no longer be edited.
-        </p>
-      )}
+      ) : null}
 
       <div className="space-y-3">
-        <h2 className="font-heading text-lg font-semibold tracking-[0.14em] uppercase leading-relaxed">
+        <h2 className="font-[family-name:var(--font-proposal-display)] text-lg tracking-[0.14em] text-stone-500 uppercase">
           Itinerary ({sortedItems.length})
         </h2>
 
         {sortedItems.length === 0 ? (
-          <p className="rounded-lg border border-dashed px-3 py-6 text-lg text-muted-foreground">
+          <p className="rounded-2xl border border-dashed border-stone-200 bg-white/60 px-3 py-6 text-lg text-stone-600">
             {isDraft
               ? "No items yet. Add the first experience above."
               : "No items in this proposal."}
@@ -564,69 +562,99 @@ export function ProposalCard({
         )}
       </div>
 
-      <div className="space-y-4 border-t border-border pt-6">
-        <h2 className="font-heading text-lg font-semibold tracking-[0.14em] uppercase leading-relaxed">
-          Preview & Send
-        </h2>
+      <div
+        className={cn(
+          isDraft ? "space-y-4 border-t border-stone-100 pt-6" : "pt-2",
+        )}
+      >
+        {isDraft ? (
+          <>
+            <h2 className="font-[family-name:var(--font-proposal-display)] text-lg tracking-[0.14em] text-stone-500 uppercase">
+              Preview & Send
+            </h2>
 
-        <label className="block space-y-1.5">
-          <span className="text-sm leading-relaxed text-muted-foreground">
-            Message for {memberName}
-          </span>
-          <Textarea
-            value={notes}
-            onChange={(event) => handleNotesChange(event.target.value)}
-            onBlur={handleNotesBlur}
-            placeholder={`Add a personal note for ${memberName}…`}
-            rows={3}
-            disabled={!isDraft || disabled}
-            readOnly={!isDraft}
-          />
-        </label>
+            <label className="block space-y-1.5">
+              <span className="text-sm leading-relaxed text-stone-500">
+                Message for {memberName}
+              </span>
+              <Textarea
+                value={notes}
+                onChange={(event) => handleNotesChange(event.target.value)}
+                onBlur={handleNotesBlur}
+                placeholder={`Add a personal note for ${memberName}…`}
+                rows={3}
+                disabled={disabled}
+              />
+            </label>
 
-        <div className="flex flex-col items-end gap-2">
-          <div className="flex flex-wrap justify-end gap-2">
-            <ProposalPreviewDialog
-              proposalId={proposal.id}
-              memberFirstName={memberName}
-              disabled={disabled}
-              buildPreviewData={(data) =>
-                toProposalViewData(
-                  data,
-                  reservation,
-                  isDraft ? notes : undefined,
-                )
-              }
-            />
-            <Button
-              variant="outline"
-              size="sm"
-              render={
-                <Link
-                  href={`/proposal/${proposal.id}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
+            <div className="flex flex-col items-end gap-2">
+              <div className="flex flex-wrap justify-end gap-2">
+                <ProposalPreviewDialog
+                  proposalId={proposal.id}
+                  memberFirstName={memberName}
+                  disabled={disabled}
+                  buildPreviewData={(data) =>
+                    toProposalViewData(data, reservation, notes)
+                  }
                 />
-              }
-            >
-              Member page
-            </Button>
-            {isDraft && (
-              <Button
-                size="sm"
-                onClick={() => void handleSend()}
-                disabled={sendDisabled}
-              >
-                {sending ? "Sending…" : "Send Proposal"}
-              </Button>
-            )}
-          </div>
-          {isEmptyDraft && (
-            <p className="max-w-sm text-right text-sm text-muted-foreground">
-              {emptyProposalSendMessage}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  render={
+                    <Link
+                      href={`/proposal/${proposal.id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    />
+                  }
+                >
+                  Member page
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => void handleSend()}
+                  disabled={sendDisabled}
+                >
+                  {sending ? "Sending…" : "Send Proposal"}
+                </Button>
+              </div>
+              {isEmptyDraft && (
+                <p className="max-w-sm text-right text-sm text-stone-500">
+                  {emptyProposalSendMessage}
+                </p>
+              )}
+            </div>
+          </>
+        ) : (
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-base text-stone-600">
+              This proposal has been sent and can no longer be edited.
             </p>
-          )}
-        </div>
+            <div className="flex flex-wrap gap-2">
+              <ProposalPreviewDialog
+                proposalId={proposal.id}
+                memberFirstName={memberName}
+                disabled={disabled}
+                buildPreviewData={(data) =>
+                  toProposalViewData(data, reservation)
+                }
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                render={
+                  <Link
+                    href={`/proposal/${proposal.id}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  />
+                }
+              >
+                Member page
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
     </section>
   );

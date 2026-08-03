@@ -47,7 +47,7 @@ export function MemberProposalConfirmed({
   total: number;
 }) {
   return (
-    <div className="mt-12 rounded-2xl border border-stone-200 bg-white/90 px-8 py-12 text-center shadow-sm shadow-stone-200/60">
+    <div className="rounded-2xl border border-stone-200 bg-white/90 px-8 py-12 text-center shadow-sm shadow-stone-200/60 lg:px-12 lg:py-16">
       <div className="mx-auto mb-6 flex size-16 items-center justify-center rounded-full bg-stone-900 text-stone-50">
         <svg
           xmlns="http://www.w3.org/2000/svg"

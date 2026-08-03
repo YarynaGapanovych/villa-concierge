@@ -145,7 +145,7 @@ export function ItineraryItemRow({
   if (editing) {
     return (
       <li>
-        <Card size="sm" className="py-3">
+        <Card size="sm" className="border-stone-200/80 bg-white/80 py-3 shadow-sm shadow-stone-200/50">
           <CardContent className="space-y-3 px-3 py-0">
             <div className="flex items-center justify-between gap-2">
               <Badge variant="secondary">{item.category}</Badge>
@@ -175,7 +175,7 @@ export function ItineraryItemRow({
 
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="space-y-1.5 sm:col-span-2">
-                <span className="text-sm text-muted-foreground">Title</span>
+                <span className="text-sm text-stone-500">Title</span>
                 <Input
                   {...register("title")}
                   aria-invalid={errors.title ? true : undefined}
@@ -186,7 +186,7 @@ export function ItineraryItemRow({
               </label>
 
               <label className="space-y-1.5">
-                <span className="text-sm text-muted-foreground">Scheduled</span>
+                <span className="text-sm text-stone-500">Scheduled</span>
                 <Input
                   type="datetime-local"
                   min={scheduledMin}
@@ -202,11 +202,11 @@ export function ItineraryItemRow({
               </label>
 
               <label className="space-y-1.5">
-                <span className="text-sm text-muted-foreground">Price</span>
+                <span className="text-sm text-stone-500">Price</span>
                 <div className="relative">
                   <span
                     aria-hidden
-                    className="pointer-events-none absolute inset-y-0 left-2.5 flex items-center text-muted-foreground"
+                    className="pointer-events-none absolute inset-y-0 left-2.5 flex items-center text-stone-500"
                   >
                     $
                   </span>
@@ -225,7 +225,7 @@ export function ItineraryItemRow({
               </label>
 
               <label className="space-y-1.5 sm:col-span-2">
-                <span className="text-sm text-muted-foreground">Description</span>
+                <span className="text-sm text-stone-500">Description</span>
                 <Textarea rows={2} {...register("description")} />
               </label>
             </div>
@@ -239,7 +239,7 @@ export function ItineraryItemRow({
     <li>
       <Card
         size="sm"
-        className={`py-2 ${editable ? "cursor-pointer transition-colors hover:bg-muted/30" : ""}`}
+        className={`border-stone-200/80 bg-white/80 py-2 shadow-sm shadow-stone-200/50 ${editable ? "cursor-pointer transition-colors hover:bg-white/95" : ""}`}
         onClick={editable ? () => setEditing(true) : undefined}
       >
         <CardContent className="flex items-center gap-2 px-3 py-0">
@@ -247,17 +247,17 @@ export function ItineraryItemRow({
             {item.category}
           </Badge>
           <div className="min-w-0 flex-1">
-            <p className="truncate font-medium">{item.title}</p>
+            <p className="truncate font-medium text-stone-900">{item.title}</p>
             {item.description && (
-              <p className="truncate text-base text-muted-foreground">
+              <p className="truncate text-base text-stone-600">
                 {item.description}
               </p>
             )}
           </div>
-          <span className="shrink-0 text-base text-muted-foreground tabular-nums">
+          <span className="shrink-0 text-base text-stone-500 tabular-nums">
             {formatItemDateTime(item.scheduledAt)}
           </span>
-          <span className="shrink-0 text-lg font-medium tabular-nums">
+          <span className="shrink-0 font-[family-name:var(--font-proposal-display)] text-lg font-medium text-stone-800 tabular-nums">
             {formatPrice(item.price)}
           </span>
           {editable && (
