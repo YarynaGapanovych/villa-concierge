@@ -116,18 +116,10 @@ Beyond the core brief, I added:
 
 ## What was interesting / hard
 
-The core design problem was building two UIs off the same data with opposite goals — the
-concierge side wants speed and density, the member side wants to feel unhurried and premium.
-That split ended up shaping more than just the styling: it's why approve and pay are two
-separate steps instead of one, and why the API leans on nested Prisma includes to hand each
-view exactly the shape of data it needs.
+Since there's no auth, I had to decide how a reviewer would actually get to the member view without it being a real emailed link. I ended up just adding a "Member Page" button on the concierge side that jumps straight there — not realistic for production, but the simplest way to make the flow demoable without building auth I wasn't asked for.
 
-Keeping validation consistent across layers was the fiddliest part — Zod + React Hook Form on
-the client, the same rules checked again in the route handlers, and getting the date-range
-constraint to behave correctly around timezone boundaries took a few passes. The timeline view
-was its own small puzzle: grouping items by calendar day across a multi-day stay, including
-empty days, without off-by-one errors creeping in at the edges of the range.
+The design side was the part I enjoyed most, but it wasn't always straightforward — getting the concierge dashboard to feel efficient and the member view to feel premium, out of the same underlying data, took more iteration than I expected going in.
 
-The most annoying part, honestly, wasn't the app itself — it was getting a fresh Prisma 7 +
-SQLite setup working smoothly on a clean clone (adapter config, getting migrate-before-seed
-order right). Worth calling out here so nobody else loses time on it.
+What I liked most about this brief overall was that it wasn't just a UI exercise — it's a full piece of functionality end to end: schema, API, concierge UI, member UI, all of it. I like being able to see the whole picture of a feature rather than just one layer of it.
+
+The most annoying part, honestly, wasn't the app itself — it was getting a fresh Prisma 7 + SQLite setup working smoothly on a clean clone (adapter config, getting migrate-before-seed order right). Worth calling out here so nobody else loses time on it.
