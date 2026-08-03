@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { ConciergeDashboard } from "@/components/concierge-dashboard";
+import { fetchProposalsForReservation } from "@/lib/fetch-proposals";
 import { fetchReservation } from "@/lib/fetch-reservations";
 
 export const dynamic = "force-dynamic";
@@ -19,6 +20,8 @@ export default async function ClientDetailPage({
     notFound();
   }
 
+  const proposals = await fetchProposalsForReservation(reservationId);
+
   return (
     <ConciergeDashboard
       reservation={{
@@ -29,6 +32,7 @@ export default async function ClientDetailPage({
         departureDate: reservation.departureDate,
         member: reservation.member,
       }}
+      initialProposals={proposals}
     />
   );
 }
