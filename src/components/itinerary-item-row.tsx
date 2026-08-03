@@ -145,7 +145,10 @@ export function ItineraryItemRow({
   if (editing) {
     return (
       <li>
-        <Card size="sm" className="border-stone-200/80 bg-white/80 py-3 shadow-sm shadow-stone-200/50">
+        <Card
+          size="sm"
+          className="border-stone-200/80 bg-white/80 py-3 shadow-sm shadow-stone-200/50"
+        >
           <CardContent className="space-y-3 px-3 py-0">
             <div className="flex items-center justify-between gap-2">
               <Badge variant="secondary">{item.category}</Badge>
@@ -181,7 +184,9 @@ export function ItineraryItemRow({
                   aria-invalid={errors.title ? true : undefined}
                 />
                 {errors.title && (
-                  <p className="text-sm text-destructive">{errors.title.message}</p>
+                  <p className="text-sm text-destructive">
+                    {errors.title.message}
+                  </p>
                 )}
               </label>
 
@@ -220,7 +225,9 @@ export function ItineraryItemRow({
                   />
                 </div>
                 {errors.price && (
-                  <p className="text-sm text-destructive">{errors.price.message}</p>
+                  <p className="text-sm text-destructive">
+                    {errors.price.message}
+                  </p>
                 )}
               </label>
 

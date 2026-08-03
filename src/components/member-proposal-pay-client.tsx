@@ -70,7 +70,7 @@ export function MemberProposalPayClient({
 
   if (proposal.status === "paid") {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-stone-50 px-6">
+      <main className="flex flex-1 items-center justify-center px-6">
         <div className="mx-auto w-full max-w-2xl">
           <MemberProposalConfirmed
             memberName={memberName}
@@ -83,7 +83,7 @@ export function MemberProposalPayClient({
   }
 
   return (
-    <main className="flex min-h-full items-center justify-center bg-stone-50 px-6 py-12 lg:py-20">
+    <main className="flex flex-1 items-center justify-center px-6 py-12 lg:py-20">
       <div className="w-full max-w-6xl">
         <div className="grid items-center gap-10 lg:grid-cols-[1.15fr_0.85fr] lg:gap-20 xl:gap-24">
           <section className="space-y-6 text-center lg:text-left">

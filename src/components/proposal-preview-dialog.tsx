@@ -73,28 +73,26 @@ export function ProposalPreviewDialog({
       <DialogTrigger render={<Button variant="outline" size="sm" disabled={disabled} />}>
         Preview
       </DialogTrigger>
-      <DialogScrollContent className="h-[min(95vh,calc(100vh-3rem))] w-full max-w-5xl gap-0 p-0 sm:max-w-5xl">
-        <DialogHeader className="shrink-0 border-b border-border px-6 py-4">
+      <DialogScrollContent className="w-full max-w-5xl gap-0 p-0 sm:max-w-5xl">
+        <DialogHeader className="sticky top-0 z-10 shrink-0 border-b border-border bg-popover px-6 py-4">
           <DialogTitle>Member preview</DialogTitle>
           <DialogDescription>
             This is what {memberFirstName} will see at their proposal link.
           </DialogDescription>
         </DialogHeader>
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
-          {loading ? (
-            <p className="px-6 py-12 text-lg text-muted-foreground">
-              Loading preview…
-            </p>
-          ) : error ? (
-            <p className="px-6 py-12 text-lg text-destructive" role="alert">
-              {error}
-            </p>
-          ) : previewData ? (
-            <ProposalViewFrame embedded>
-              <ProposalView proposal={previewData} embedded />
-            </ProposalViewFrame>
-          ) : null}
-        </div>
+        {loading ? (
+          <p className="px-6 py-12 text-lg text-muted-foreground">
+            Loading preview…
+          </p>
+        ) : error ? (
+          <p className="px-6 py-12 text-lg text-destructive" role="alert">
+            {error}
+          </p>
+        ) : previewData ? (
+          <ProposalViewFrame embedded>
+            <ProposalView proposal={previewData} embedded />
+          </ProposalViewFrame>
+        ) : null}
       </DialogScrollContent>
     </Dialog>
   );

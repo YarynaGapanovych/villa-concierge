@@ -94,7 +94,7 @@ function DialogScrollContent({
         <DialogPrimitive.Popup
           data-slot="dialog-content"
           className={cn(
-            "relative flex max-h-full min-h-0 w-full flex-col overflow-hidden rounded-xl bg-popover text-base text-popover-foreground ring-1 ring-foreground/10 duration-100 outline-none data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+            "relative flex max-h-[min(95vh,calc(100vh-3rem))] min-h-0 w-full flex-col overflow-y-auto overscroll-contain rounded-xl bg-popover text-base text-popover-foreground ring-1 ring-foreground/10 duration-100 outline-none data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
             className,
           )}
           {...props}

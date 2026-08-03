@@ -11,7 +11,7 @@ export default async function ClientsPage() {
   } catch {
     return (
       <>
-        <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-4 pt-4 pb-24">
+        <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-4 pt-12 pb-24 md:pt-16">
           <p className="text-lg text-destructive" role="alert">
             Failed to load clients. Please try again.
           </p>
@@ -22,7 +22,7 @@ export default async function ClientsPage() {
 
   return (
     <>
-      <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-4 pt-4 pb-24">
+      <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-6 px-4 pt-12 pb-24 md:pt-16">
         <header className="space-y-1">
           <p className="font-[family-name:var(--font-proposal-display)] text-sm tracking-[0.3em] text-stone-500 uppercase">
             Villa Concierge

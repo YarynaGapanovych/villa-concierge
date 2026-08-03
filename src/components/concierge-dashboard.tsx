@@ -154,7 +154,7 @@ export function ConciergeDashboard({
   }
 
   return (
-    <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-8 px-4 pt-4 pb-24">
+    <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-8 px-4 pt-12 pb-24 md:pt-16">
       {successMessage && (
         <div
           className="rounded-lg border border-green-600/30 bg-green-50 px-3 py-2 text-lg text-green-900 dark:bg-green-950/40 dark:text-green-100"

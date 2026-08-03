@@ -67,7 +67,7 @@ export function ProposalViewFrame({
     <div
       className={cn(
         `${displayFont.variable} ${bodyFont.variable} font-[family-name:var(--font-proposal-body)] text-stone-800 antialiased`,
-        !embedded && "min-h-full",
+        embedded ? undefined : "flex min-h-dvh flex-col bg-stone-50",
       )}
     >
       {children}
