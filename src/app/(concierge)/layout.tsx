@@ -7,7 +7,7 @@ export default function ConciergeLayout({
 }) {
   return (
     <ProposalViewFrame>
-      <div className="flex min-h-full flex-col bg-stone-50">{children}</div>
+      <div className="min-h-svh bg-stone-50">{children}</div>
     </ProposalViewFrame>
   );
 }

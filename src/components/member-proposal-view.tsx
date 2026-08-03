@@ -10,7 +10,7 @@ export type MemberProposalData = ProposalViewData;
 
 export function MemberProposalPreparing({ memberName }: { memberName: string }) {
   return (
-    <main className="flex flex-1 flex-col items-center justify-center px-6 py-24 text-center">
+    <main className="flex h-svh w-full flex-col items-center justify-center px-6 py-24 text-center">
         <div className="max-w-md space-y-4">
           <p className="font-[family-name:var(--font-proposal-display)] text-lg tracking-[0.3em] text-stone-500 uppercase">
             Villa Concierge
