@@ -160,11 +160,6 @@ export function ProposalCard({
   }, [proposal.status]);
 
   useEffect(() => {
-    setNotes(proposal.notes ?? "");
-    lastSavedNotes.current = proposal.notes ?? "";
-  }, [proposal.id, proposal.notes]);
-
-  useEffect(() => {
     return () => {
       if (notesSaveTimeout.current) {
         clearTimeout(notesSaveTimeout.current);
@@ -195,6 +190,7 @@ export function ProposalCard({
       }
 
       lastSavedNotes.current = normalized;
+      setNotes(normalized);
       onUpdate({ ...proposal, notes: normalized || null });
     } catch (saveError) {
       onError(
